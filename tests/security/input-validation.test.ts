@@ -10,7 +10,7 @@
 //  - SQL-injection-shaped strings are accepted as text (escaping is server-side)
 //    but length caps prevent payloads designed to overflow
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { AssetLabClient } from '../../src/client.js'

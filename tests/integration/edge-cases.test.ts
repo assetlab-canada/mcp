@@ -3,7 +3,7 @@
 // These cover the "weird input but should be accepted" surface plus a handful
 // of boundary conditions where off-by-one errors typically live.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import { registerTools } from '../../src/tools.js'

@@ -6,7 +6,7 @@
 //  3. Invokes the tool through the same path the real transport would.
 //  4. Asserts the request shape AND that the response is wrapped per MCP spec.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import { registerTools } from '../../src/tools.js'

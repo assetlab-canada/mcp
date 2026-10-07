@@ -5,7 +5,7 @@
 // These tests pin the two ways a profile silently rots: a name that no longer
 // exists after a rename, and a profile that drifts back over the cap.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import {

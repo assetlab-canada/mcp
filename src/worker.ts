@@ -12,8 +12,8 @@
  * REGISTER_IP_LIMITER, REGISTER_GLOBAL_LIMITER.
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
+import { createMcpHandler, McpServer } from '@modelcontextprotocol/server'
+import { registerApps } from './apps/index.js'
 import { AssetLabClient } from './client.js'
 import {
   authServerMetadata,
@@ -347,19 +347,18 @@ export default {
     const instructions = requestedProfile
       ? SERVER_INSTRUCTIONS + PROFILE_INSTRUCTIONS[requestedProfile]
       : SERVER_INSTRUCTIONS
-    const server = new McpServer(SERVER_INFO, { instructions })
-    registerTools(requestedProfile ? withToolProfile(server, requestedProfile) : server, client)
-
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
+    // One factory serves both eras: the 2026-07-28 per-request protocol, and 2025-era
+    // clients (Claude.ai and ChatGPT today) through the SDK's stateless fallback.
+    const handler = createMcpHandler(() => {
+      const server = new McpServer(SERVER_INFO, { instructions })
+      registerTools(requestedProfile ? withToolProfile(server, requestedProfile) : server, client)
+      // Profiles serve clients that cannot render MCP Apps, so apps ship only on the full catalogue.
+      if (!requestedProfile) registerApps(server, client)
+      return server
     })
 
-    await server.connect(transport)
-
-    const normalizedRequest = normalizeRequest(request)
-
     try {
-      const response = await transport.handleRequest(normalizedRequest)
+      const response = await handler.fetch(normalizeRequest(request))
       return withCors(response, request)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Internal server error'

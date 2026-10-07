@@ -1,12 +1,12 @@
 // Test harness that captures registered MCP tools.
 //
-// MCP SDK's McpServer.tool() registers handlers in private state. To exercise
+// MCP SDK's McpServer.registerTool() registers handlers in private state. To exercise
 // validation/dispatch logic without a real transport, we install a minimal
-// fake server that records {name, description, schema, handler} into a Map.
+// fake server that records {name, description, schema, annotations, handler} into a Map.
 // Tests then call handler({...args}) and inspect either zod validation errors
 // (raised when args are invalid) or the dispatched HTTP behavior via fake-fetch.
 
-import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js'
+import type { ToolAnnotations } from '@modelcontextprotocol/server'
 import { type ZodRawShape, type ZodTypeAny, z } from 'zod'
 
 export type ToolHandler = (args: Record<string, unknown>) => Promise<{
@@ -24,13 +24,24 @@ export interface RegisteredTool {
 
 export class FakeMcpServer {
   tools = new Map<string, RegisteredTool>()
-  // The SDK signature: tool(name, description, schema, [annotations,] handler) OR (name, schema, handler).
-  tool(name: string, ...rest: unknown[]): void {
-    const description = typeof rest[0] === 'string' ? (rest.shift() as string) : ''
-    const handler = rest.pop() as ToolHandler
-    const schema = rest[0] as ZodRawShape
-    const annotations = rest[1] as ToolAnnotations | undefined
-    this.tools.set(name, { name, description, schema, annotations, handler })
+  // The SDK v2 signature: registerTool(name, { title, description, inputSchema, annotations }, handler).
+  // inputSchema is the z.object(...) withToolAnnotations builds; tests inspect its raw shape.
+  registerTool(
+    name: string,
+    config: {
+      description?: string
+      inputSchema?: z.ZodObject<ZodRawShape>
+      annotations?: ToolAnnotations
+    },
+    handler: ToolHandler
+  ): void {
+    this.tools.set(name, {
+      name,
+      description: config.description ?? '',
+      schema: config.inputSchema?.shape ?? {},
+      annotations: config.annotations,
+      handler,
+    })
   }
 
   /**
@@ -59,7 +70,7 @@ export class FakeMcpServer {
 
 /**
  * Type-cheat so we can pass FakeMcpServer where the real McpServer is expected.
- * The MCP SDK type surface is structural enough that tool() is all we need.
+ * The MCP SDK type surface is structural enough that registerTool() is all we need.
  */
 export function asMcpServer(fake: FakeMcpServer): unknown {
   return fake

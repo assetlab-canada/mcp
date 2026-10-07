@@ -1,7 +1,7 @@
 {
   "name": "@assetlab/mcp-server",
   "mcpName": "ca.assetlab/mcp-server",
-  "version": "2.21.0",
+  "version": "3.0.0",
   "description": "MCP server for AssetLab — connect Claude or ChatGPT to your asset management data",
   "type": "module",
   "bin": {
@@ -33,11 +33,16 @@
     "!dist/worker.*",
     "!dist/oauth.*"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.31.0",
-    "zod": "^3.24.0"
+    "@modelcontextprotocol/server": "^2.3.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.0.0",
     "tsx": "^4.19.0",

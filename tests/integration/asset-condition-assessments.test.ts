@@ -5,10 +5,11 @@
 // trigger-owned previous_purchase_cost / create-only update_purchase_cost are never
 // forwarded on update.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ZodError } from 'zod'
 import { AssetLabClient } from '../../src/client.js'
+import { withToolAnnotations } from '../../src/tool-annotations.js'
 import { registerTools } from '../../src/tools.js'
 import { registerWriteTools } from '../../src/tools-write.js'
 import { apiKey, paginated, single } from '../fixtures/factories.js'
@@ -20,7 +21,7 @@ function bootstrap(): { server: FakeMcpServer; fx: FetchFake } {
   const fx = installFetchFake()
   const client = new AssetLabClient({ apiUrl: 'https://api.example.com', apiKey: apiKey() })
   registerTools(asMcpServer(server) as McpServer, client)
-  registerWriteTools(asMcpServer(server) as McpServer, client)
+  registerWriteTools(withToolAnnotations(asMcpServer(server) as McpServer), client)
   return { server, fx }
 }
 

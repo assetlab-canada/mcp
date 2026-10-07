@@ -3,7 +3,7 @@
 // We exercise the bulk endpoints (the riskiest paths) plus a handful of
 // edge cases around network failures and timeouts.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import { registerTools } from '../../src/tools.js'

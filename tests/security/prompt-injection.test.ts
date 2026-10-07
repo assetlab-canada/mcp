@@ -14,7 +14,7 @@
 //  - read tools (formatResult via tools.ts) and write tools (via tools-write.ts)
 //    both go through the same shaping function
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import { formatResult, scanForInjection } from '../../src/response-shaping.js'

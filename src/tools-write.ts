@@ -6,10 +6,10 @@
  * Write tools require API keys with the appropriate :write scope.
  */
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { AssetLabClient } from './client.js'
 import { formatError, formatResult } from './response-shaping.js'
+import type { ToolRegistrar } from './tool-annotations.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -39,7 +39,7 @@ function workspaceBody(params: Record<string, unknown>): Record<string, unknown>
 // generates carry a copy of that form for the technician to fill in.
 const FORM_TEMPLATE_LINK_SCHEMA = z
   .string()
-  .uuid()
+  .guid()
   .optional()
   .describe(
     'Form template ID to attach to every work order this generates - resolve via list_form_templates. Use a PUBLISHED template: generation resolves the current published version of the form, so a draft attaches nothing until it is published.'
@@ -49,7 +49,7 @@ const FORM_TEMPLATE_LINK_SCHEMA = z
 // The API mirrors whichever side is sent, but callers still need the arrays to associate several
 // records at once (and systems, which have no singular field at all).
 const ASSOCIATION_ARRAY_SCHEMA = (description: string) =>
-  z.array(z.string().uuid()).optional().describe(description)
+  z.array(z.string().guid()).optional().describe(description)
 
 const FORM_TEMPLATE_STATUSES = ['draft', 'published', 'archived'] as const
 const FORM_ITEM_TYPES = [
@@ -118,7 +118,7 @@ function normalizePmTemplateBody(params: Record<string, unknown>): Record<string
 // Registration
 // ---------------------------------------------------------------------------
 
-export function registerWriteTools(server: McpServer, client: AssetLabClient): void {
+export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient): void {
   // ============================================================
   // 1. Work Orders (scope: work_orders)
   // ============================================================
@@ -135,22 +135,22 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Status'),
       type: z.enum(['PM', 'REACTIVE']).optional().describe('Work order type'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Location this work order is for - resolve last via list_locations filtered by building_id. The server mirrors it into location_ids, so send this OR location_ids, not a conflicting pair.'
         ),
       asset_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Asset this work order is for - resolve via list_assets. The server mirrors it into asset_ids.'
@@ -171,7 +171,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       due_date: z.string().optional().describe('Due date (ISO 8601)'),
       estimated_time: z.number().min(0).optional().describe('Estimated time in hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
-      work_category_id: z.string().uuid().optional().describe('Work category ID'),
+      work_category_id: z.string().guid().optional().describe('Work category ID'),
       assigned_to: z.string().optional().describe('Assigned user ID (mapped to assignees array)'),
       assignees: z
         .array(z.string())
@@ -192,7 +192,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       meter_unit: z.string().max(50).optional().describe('Meter unit (km, miles, hours, cycles)'),
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           "Purchase order that paid this work order's actual cost - resolve via list_purchase_orders. Counts against the order's remaining balance."
@@ -212,7 +212,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_work_order',
     'Update an existing work order by ID. Requires work_orders:write scope. When changing location, resolve top-down: list_sites → list_buildings (by site_id) → list_locations (by building_id). Provide all three IDs. To complete a work order, set status COMPLETED and say what was done in completion_notes; completed_at is stamped automatically.',
     {
-      id: z.string().uuid().describe('Work order ID'),
+      id: z.string().guid().describe('Work order ID'),
       title: z.string().min(1).max(500).optional().describe('Work order title'),
       description: z.string().optional().describe('Detailed description'),
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().describe('Priority level'),
@@ -221,22 +221,22 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Status'),
       type: z.enum(['PM', 'REACTIVE']).optional().describe('Work order type'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Location this work order is for - resolve last via list_locations filtered by building_id. The server mirrors it into location_ids, so send this OR location_ids, not a conflicting pair.'
         ),
       asset_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Asset this work order is for - resolve via list_assets. The server mirrors it into asset_ids.'
@@ -257,7 +257,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       due_date: z.string().optional().describe('Due date (ISO 8601)'),
       estimated_time: z.number().min(0).optional().describe('Estimated time in hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
-      work_category_id: z.string().uuid().optional().describe('Work category ID'),
+      work_category_id: z.string().guid().optional().describe('Work category ID'),
       assigned_to: z.string().optional().describe('Assigned user ID (mapped to assignees array)'),
       assignees: z
         .array(z.string())
@@ -278,7 +278,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       meter_unit: z.string().max(50).optional().describe('Meter unit (km, miles, hours, cycles)'),
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .nullable()
         .optional()
         .describe(
@@ -303,7 +303,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_work_order',
     'Delete a work order by ID. Requires work_orders:write scope.',
-    { id: z.string().uuid().describe('Work order ID') },
+    { id: z.string().guid().describe('Work order ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('work-orders', id)
@@ -329,10 +329,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .max(100)
         .optional()
         .describe('Custom asset identifier (unique per tenant)'),
-      asset_type_id: z.string().uuid().optional().describe('Asset type ID (from asset_types)'),
+      asset_type_id: z.string().guid().optional().describe('Asset type ID (from asset_types)'),
       manufacturer_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Manufacturer ID (from manufacturers)'),
       model: z.string().max(500).optional().describe('Model name/number'),
@@ -357,32 +357,32 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Risk factor (CRITICAL, HIGH, MEDIUM, LOW)'),
       status_id: z.string().max(100).optional().describe('Status identifier'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location ID - resolve last via list_locations filtered by building_id'),
       system_class_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('System class ID - resolve first via list_system_classes'),
       system_group_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'System group ID - resolve second via list_system_groups filtered by system_class_id'
         ),
       system_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('System ID - resolve last via list_systems filtered by system_group_id'),
       image_url: z.string().max(2000).optional().describe('Image URL'),
@@ -451,7 +451,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset',
     'Update an existing asset by ID. Requires assets:write scope. When changing location, resolve top-down: list_sites → list_buildings (by site_id) → list_locations (by building_id). Provide all three IDs. Same for systems: list_system_classes → list_system_groups → list_systems.',
     {
-      id: z.string().uuid().describe('Asset ID'),
+      id: z.string().guid().describe('Asset ID'),
       name: z.string().min(1).max(500).optional().describe('Asset name'),
       description: z.string().optional().describe('Description'),
       asset_id: z
@@ -459,10 +459,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .max(100)
         .optional()
         .describe('Custom asset identifier (unique per tenant)'),
-      asset_type_id: z.string().uuid().optional().describe('Asset type ID (from asset_types)'),
+      asset_type_id: z.string().guid().optional().describe('Asset type ID (from asset_types)'),
       manufacturer_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Manufacturer ID (from manufacturers)'),
       model: z.string().max(500).optional().describe('Model name/number'),
@@ -487,32 +487,32 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Risk factor (CRITICAL, HIGH, MEDIUM, LOW)'),
       status_id: z.string().max(100).optional().describe('Status identifier'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location ID - resolve last via list_locations filtered by building_id'),
       system_class_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('System class ID - resolve first via list_system_classes'),
       system_group_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'System group ID - resolve second via list_system_groups filtered by system_class_id'
         ),
       system_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('System ID - resolve last via list_systems filtered by system_group_id'),
       image_url: z.string().max(2000).optional().describe('Image URL'),
@@ -580,7 +580,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset',
     'Delete an asset by ID. Requires assets:write scope.',
-    { id: z.string().uuid().describe('Asset ID') },
+    { id: z.string().guid().describe('Asset ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('assets', id)
@@ -606,20 +606,20 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .enum(['SUBMITTED', 'APPROVED', 'REJECTED', 'CONVERTED'])
         .optional()
         .describe('Status'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location ID - resolve last via list_locations filtered by building_id'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
-      system_id: z.string().uuid().optional().describe('System ID'),
-      work_category_id: z.string().uuid().optional().describe('Work category ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
+      system_id: z.string().guid().optional().describe('System ID'),
+      work_category_id: z.string().guid().optional().describe('Work category ID'),
     },
     async params => {
       try {
@@ -635,7 +635,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_work_request',
     'Update an existing work request by ID. Requires work_requests:write scope. When changing location, resolve top-down: list_sites → list_buildings (by site_id) → list_locations (by building_id). Provide all three IDs.',
     {
-      id: z.string().uuid().describe('Work request ID'),
+      id: z.string().guid().describe('Work request ID'),
       title: z.string().min(1).max(500).optional().describe('Work request title'),
       description: z.string().optional().describe('Description'),
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Priority level'),
@@ -643,20 +643,20 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .enum(['SUBMITTED', 'APPROVED', 'REJECTED', 'CONVERTED'])
         .optional()
         .describe('Status'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location ID - resolve last via list_locations filtered by building_id'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
-      system_id: z.string().uuid().optional().describe('System ID'),
-      work_category_id: z.string().uuid().optional().describe('Work category ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
+      system_id: z.string().guid().optional().describe('System ID'),
+      work_category_id: z.string().guid().optional().describe('Work category ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -671,7 +671,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_work_request',
     'Delete a work request by ID. Requires work_requests:write scope.',
-    { id: z.string().uuid().describe('Work request ID') },
+    { id: z.string().guid().describe('Work request ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('work-requests', id)
@@ -724,7 +724,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_vendor',
     'Update an existing vendor by ID. Requires vendors:write scope.',
     {
-      id: z.string().uuid().describe('Vendor ID'),
+      id: z.string().guid().describe('Vendor ID'),
       name: z.string().min(1).max(500).optional().describe('Vendor name'),
       contact_name: z.string().max(200).optional().describe('Contact person name'),
       contact_email: z.string().max(200).optional().describe('Contact email'),
@@ -758,7 +758,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_vendor',
     'Delete a vendor by ID. Requires vendors:write scope.',
-    { id: z.string().uuid().describe('Vendor ID') },
+    { id: z.string().guid().describe('Vendor ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('vendors', id)
@@ -843,7 +843,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_site',
     'Update an existing site by ID. Requires sites:write scope.',
     {
-      id: z.string().uuid().describe('Site ID'),
+      id: z.string().guid().describe('Site ID'),
       name: z.string().min(1).max(500).optional().describe('Site name'),
       address: z.string().max(500).optional().describe('Street address'),
       city: z.string().max(200).optional().describe('City'),
@@ -909,7 +909,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_site',
     'Delete a site by ID. Requires sites:write scope.',
-    { id: z.string().uuid().describe('Site ID') },
+    { id: z.string().guid().describe('Site ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('sites', id)
@@ -929,13 +929,13 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'Create a new building. Requires buildings:write scope. latitude and longitude place the building on the map and must be sent together - one without the other is rejected.',
     {
       name: z.string().min(1).max(500).describe('Building name (required)'),
-      site_id: z.string().uuid().describe('Site ID (required)'),
+      site_id: z.string().guid().describe('Site ID (required)'),
       floors: z.number().int().optional().describe('Number of floors'),
       area_sqft: z.number().min(0).optional().describe('Area in square feet'),
       type: z.string().max(100).optional().describe('Building type label'),
       building_type_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building type ID (from building_types)'),
       year_built: z
@@ -976,15 +976,15 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_building',
     'Update an existing building by ID. Requires buildings:write scope. latitude and longitude must be sent together; send both as null to clear the building position.',
     {
-      id: z.string().uuid().describe('Building ID'),
+      id: z.string().guid().describe('Building ID'),
       name: z.string().min(1).max(500).optional().describe('Building name'),
-      site_id: z.string().uuid().optional().describe('Site ID'),
+      site_id: z.string().guid().optional().describe('Site ID'),
       floors: z.number().int().optional().describe('Number of floors'),
       area_sqft: z.number().min(0).optional().describe('Area in square feet'),
       type: z.string().max(100).optional().describe('Building type label'),
       building_type_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building type ID (from building_types)'),
       year_built: z
@@ -1026,7 +1026,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_building',
     'Delete a building by ID. Requires buildings:write scope.',
-    { id: z.string().uuid().describe('Building ID') },
+    { id: z.string().guid().describe('Building ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('buildings', id)
@@ -1046,13 +1046,13 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'Create a new location within a building. Requires locations:write scope.',
     {
       name: z.string().min(1).max(500).describe('Location name (required)'),
-      building_id: z.string().uuid().describe('Building ID (required)'),
+      building_id: z.string().guid().describe('Building ID (required)'),
       floor: z.string().max(50).optional().describe('Floor identifier'),
       area: z.number().min(0).optional().describe('Area (sq ft or sq m)'),
       type: z.string().max(100).optional().describe('Location type label'),
       location_type_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location type ID (from location_types)'),
     },
@@ -1070,15 +1070,15 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_location',
     'Update an existing location by ID. Requires locations:write scope.',
     {
-      id: z.string().uuid().describe('Location ID'),
+      id: z.string().guid().describe('Location ID'),
       name: z.string().min(1).max(500).optional().describe('Location name'),
-      building_id: z.string().uuid().optional().describe('Building ID'),
+      building_id: z.string().guid().optional().describe('Building ID'),
       floor: z.string().max(50).optional().describe('Floor identifier'),
       area: z.number().min(0).optional().describe('Area (sq ft or sq m)'),
       type: z.string().max(100).optional().describe('Location type label'),
       location_type_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location type ID (from location_types)'),
     },
@@ -1095,7 +1095,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_location',
     'Delete a location by ID. Requires locations:write scope.',
-    { id: z.string().uuid().describe('Location ID') },
+    { id: z.string().guid().describe('Location ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('locations', id)
@@ -1138,18 +1138,18 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       next_due: z.string().optional().describe('Next due date (ISO 8601)'),
       estimated_hours: z.number().min(0).optional().describe('Estimated hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location ID - resolve last via list_locations filtered by building_id'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
       work_category: z.string().max(200).optional().describe('Work category label'),
       schedule_type: z.string().max(100).optional().describe('Schedule type'),
       lead_time_days: z.number().int().min(0).optional().describe('Lead time in days'),
@@ -1207,7 +1207,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_pm_schedule',
     'Update an existing PM schedule by ID. Requires pm_schedules:write scope. When changing location, resolve top-down: list_sites → list_buildings (by site_id) → list_locations (by building_id). Provide all three IDs.',
     {
-      id: z.string().uuid().describe('PM schedule ID'),
+      id: z.string().guid().describe('PM schedule ID'),
       title: z.string().min(1).max(500).optional().describe('PM schedule title'),
       description: z.string().optional().describe('Description'),
       frequency: z
@@ -1232,18 +1232,18 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       next_due: z.string().optional().describe('Next due date (ISO 8601)'),
       estimated_hours: z.number().min(0).optional().describe('Estimated hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
-      site_id: z.string().uuid().optional().describe('Site ID - resolve first via list_sites'),
+      site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID - resolve second via list_buildings filtered by site_id'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Location ID - resolve last via list_locations filtered by building_id'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
       work_category: z.string().max(200).optional().describe('Work category label'),
       schedule_type: z.string().max(100).optional().describe('Schedule type'),
       lead_time_days: z.number().int().min(0).optional().describe('Lead time in days'),
@@ -1297,7 +1297,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_pm_schedule',
     'Delete a PM schedule by ID. Requires pm_schedules:write scope.',
-    { id: z.string().uuid().describe('PM schedule ID') },
+    { id: z.string().guid().describe('PM schedule ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('pm-schedules', id)
@@ -1340,7 +1340,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       work_category: z.string().max(200).optional().describe('Work category label (free text)'),
       work_category_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Work category ID - resolve via list_work_categories'),
       estimated_hours: z.number().min(0).optional().describe('Estimated hours'),
@@ -1373,13 +1373,16 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         )
         .optional()
         .describe('Resource references (parts, tools, materials, equipment)'),
-      documents: z.array(z.record(z.unknown())).optional().describe('Document references'),
+      documents: z
+        .array(z.record(z.string(), z.unknown()))
+        .optional()
+        .describe('Document references'),
       asset_ids: z
-        .array(z.string().uuid())
+        .array(z.string().guid())
         .optional()
         .describe('Default asset IDs to seed on derived schedules'),
       location_ids: z
-        .array(z.string().uuid())
+        .array(z.string().guid())
         .optional()
         .describe('Default location IDs to seed on derived schedules'),
       form_template_id: FORM_TEMPLATE_LINK_SCHEMA,
@@ -1401,7 +1404,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_pm_template',
     'Update an existing PM template by ID. Requires pm_templates:write scope.',
     {
-      id: z.string().uuid().describe('PM template ID'),
+      id: z.string().guid().describe('PM template ID'),
       title: z.string().min(1).max(500).optional().describe('PM template title'),
       description: z.string().optional().describe('Description'),
       frequency: z
@@ -1424,7 +1427,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Custom interval in weeks (when frequency is CUSTOM)'),
       work_category: z.string().max(200).optional().describe('Work category label (free text)'),
-      work_category_id: z.string().uuid().optional().describe('Work category ID'),
+      work_category_id: z.string().guid().optional().describe('Work category ID'),
       estimated_hours: z.number().min(0).optional().describe('Estimated hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
       safety_requirements: z.string().optional().describe('Safety requirements'),
@@ -1455,9 +1458,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         )
         .optional()
         .describe('Resource references (parts, tools, materials, equipment)'),
-      documents: z.array(z.record(z.unknown())).optional().describe('Document references'),
-      asset_ids: z.array(z.string().uuid()).optional().describe('Default asset IDs'),
-      location_ids: z.array(z.string().uuid()).optional().describe('Default location IDs'),
+      documents: z
+        .array(z.record(z.string(), z.unknown()))
+        .optional()
+        .describe('Document references'),
+      asset_ids: z.array(z.string().guid()).optional().describe('Default asset IDs'),
+      location_ids: z.array(z.string().guid()).optional().describe('Default location IDs'),
       form_template_id: FORM_TEMPLATE_LINK_SCHEMA,
     },
     async ({ id, ...rest }) => {
@@ -1477,7 +1483,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_pm_template',
     'Delete a PM template by ID. Requires pm_templates:write scope.',
-    { id: z.string().uuid().describe('PM template ID') },
+    { id: z.string().guid().describe('PM template ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('pm-templates', id)
@@ -1500,7 +1506,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       description: z.string().max(5000).optional().describe('Description'),
       work_category_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Work category ID - the same tenant-configured categories used by work orders (e.g. Electrical, Plumbing, HVAC). Look them up with list_work_categories and pick the closest match; omit if none fits.'
@@ -1527,12 +1533,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_form_template',
     'Update an existing form template by ID. Requires form_templates:write scope.',
     {
-      id: z.string().uuid().describe('Form template ID'),
+      id: z.string().guid().describe('Form template ID'),
       name: z.string().min(1).max(500).optional().describe('Form template name'),
       description: z.string().max(5000).optional().describe('Description'),
       work_category_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Work category ID (look up with list_work_categories)'),
       status: z
@@ -1556,7 +1562,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_form_template',
     'Delete a form template by ID. Requires form_templates:write scope.',
-    { id: z.string().uuid().describe('Form template ID') },
+    { id: z.string().guid().describe('Form template ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('form-templates', id)
@@ -1571,7 +1577,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_form_template_item',
     'Add one question (item) to a form template. Build a form by calling this once per question in order, or use bulk_create on form-template-items. Requires form_template_items:write scope.',
     {
-      template_id: z.string().uuid().describe('Form template ID - resolve via list_form_templates'),
+      template_id: z.string().guid().describe('Form template ID - resolve via list_form_templates'),
       item_key: z
         .string()
         .min(1)
@@ -1603,7 +1609,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
           'REQUIRED for single_select/multi_select: at least 2 choices as { value, label } with unique values. value is a machine slug (e.g. "fail"), label is shown to the user (e.g. "Fail"). Omit for other types.'
         ),
       config: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .optional()
         .describe(
           'Per-type settings. number: { min, max, unit, integer, decimals }. text: { multiline, maxLength, placeholder }. multi_select: { minSelections, maxSelections }. photo: { minPhotos, maxPhotos }.'
@@ -1630,7 +1636,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_form_template_item',
     'Update an existing form template item by ID. template_id and item_key are immutable and cannot be changed. Requires form_template_items:write scope.',
     {
-      id: z.string().uuid().describe('Form template item ID'),
+      id: z.string().guid().describe('Form template item ID'),
       sort_order: z.number().int().min(0).optional().describe('Display order within the template'),
       item_type: z
         .enum(FORM_ITEM_TYPES)
@@ -1646,7 +1652,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Choices for single_select / multi_select items'),
       config: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .optional()
         .describe('Per-type configuration (e.g. { min, max, unit, multiline })'),
       visible_when: z
@@ -1668,7 +1674,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_form_template_item',
     'Delete a form template item by ID. Requires form_template_items:write scope.',
-    { id: z.string().uuid().describe('Form template item ID') },
+    { id: z.string().guid().describe('Form template item ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('form-template-items', id)
@@ -1689,7 +1695,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       template_id: z
         .string()
-        .uuid()
+        .guid()
         .describe(
           'Published form template ID - resolve via list_form_templates. A draft or archived template is rejected; publish it first with update_form_template status="published".'
         ),
@@ -1698,7 +1704,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .describe('What kind of record the form is being attached to'),
       subject_id: z
         .string()
-        .uuid()
+        .guid()
         .describe(
           'ID of the record - resolve via the matching list tool (list_work_orders, list_pm_schedules, list_infrastructure_assets, list_compliance_records, list_sites)'
         ),
@@ -1719,7 +1725,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       id: z
         .string()
-        .uuid()
+        .guid()
         .describe('Form response ID - resolve via list_form_responses filtered by subject_id'),
     },
     async ({ id }) => {
@@ -1796,7 +1802,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project',
     'Update an existing project by ID. Requires projects:write scope.',
     {
-      id: z.string().uuid().describe('Project ID'),
+      id: z.string().guid().describe('Project ID'),
       name: z.string().min(1).max(500).optional().describe('Project name'),
       status: z.string().max(100).optional().describe('Project status'),
       start_date: z.string().optional().describe('Start date (ISO 8601)'),
@@ -1852,7 +1858,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project',
     'Delete a project by ID. Requires projects:write scope.',
-    { id: z.string().uuid().describe('Project ID') },
+    { id: z.string().guid().describe('Project ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('projects', id)
@@ -1875,7 +1881,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       category: z.string().max(200).describe('Contract category (required)'),
       start_date: z.string().describe('Start date (ISO 8601, required)'),
       end_date: z.string().describe('End date (ISO 8601, required)'),
-      company_id: z.string().uuid().optional().describe('Vendor ID'),
+      company_id: z.string().guid().optional().describe('Vendor ID'),
       purchase_order: z.string().max(200).optional().describe('Purchase order reference'),
       extendable: z.boolean().optional().describe('Whether contract is extendable'),
       annual_cost: z.number().min(0).optional().describe('Annual cost'),
@@ -1896,12 +1902,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_contract',
     'Update an existing contract by ID. Requires contracts:write scope.',
     {
-      id: z.string().uuid().describe('Contract ID'),
+      id: z.string().guid().describe('Contract ID'),
       title: z.string().min(1).max(500).optional().describe('Contract title'),
       category: z.string().max(200).optional().describe('Contract category'),
       start_date: z.string().optional().describe('Start date (ISO 8601)'),
       end_date: z.string().optional().describe('End date (ISO 8601)'),
-      company_id: z.string().uuid().optional().describe('Vendor ID'),
+      company_id: z.string().guid().optional().describe('Vendor ID'),
       purchase_order: z.string().max(200).optional().describe('Purchase order reference'),
       extendable: z.boolean().optional().describe('Whether contract is extendable'),
       annual_cost: z.number().min(0).optional().describe('Annual cost'),
@@ -1921,7 +1927,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_contract',
     'Delete a contract by ID. Requires contracts:write scope.',
-    { id: z.string().uuid().describe('Contract ID') },
+    { id: z.string().guid().describe('Contract ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('contracts', id)
@@ -1952,11 +1958,11 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Invoice status'),
       notes: z.string().optional().describe('Notes'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      purchase_order_id: z.string().uuid().optional().describe('Purchase order ID'),
-      vendor_id: z.string().uuid().optional().describe('Vendor ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      purchase_order_id: z.string().guid().optional().describe('Purchase order ID'),
+      vendor_id: z.string().guid().optional().describe('Vendor ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
     },
     async params => {
       try {
@@ -1972,7 +1978,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_invoice',
     'Update an existing invoice by ID. Requires invoices:write scope.',
     {
-      id: z.string().uuid().describe('Invoice ID'),
+      id: z.string().guid().describe('Invoice ID'),
       invoice_number: z.string().min(1).max(200).optional().describe('Invoice number'),
       amount: z.number().min(0).optional().describe('Invoice amount'),
       invoice_date: z.string().optional().describe('Invoice date (ISO 8601)'),
@@ -1985,11 +1991,11 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Invoice status'),
       notes: z.string().optional().describe('Notes'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      purchase_order_id: z.string().uuid().optional().describe('Purchase order ID'),
-      vendor_id: z.string().uuid().optional().describe('Vendor ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      purchase_order_id: z.string().guid().optional().describe('Purchase order ID'),
+      vendor_id: z.string().guid().optional().describe('Vendor ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -2004,7 +2010,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_invoice',
     'Delete an invoice by ID. Requires invoices:write scope.',
-    { id: z.string().uuid().describe('Invoice ID') },
+    { id: z.string().guid().describe('Invoice ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('invoices', id)
@@ -2033,10 +2039,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       issued_date: z.string().optional().describe('Issued date (ISO 8601)'),
       expected_date: z.string().optional().describe('Expected delivery date (ISO 8601)'),
       notes: z.string().optional().describe('Notes'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      vendor_id: z.string().uuid().optional().describe('Vendor ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      vendor_id: z.string().guid().optional().describe('Vendor ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
     },
     async params => {
       try {
@@ -2052,7 +2058,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_purchase_order',
     'Update an existing purchase order by ID. Requires purchase_orders:write scope.',
     {
-      id: z.string().uuid().describe('Purchase order ID'),
+      id: z.string().guid().describe('Purchase order ID'),
       po_number: z.string().min(1).max(200).optional().describe('PO number'),
       amount: z.number().min(0).optional().describe('PO amount'),
       description: z.string().optional().describe('Description'),
@@ -2063,10 +2069,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       issued_date: z.string().optional().describe('Issued date (ISO 8601)'),
       expected_date: z.string().optional().describe('Expected delivery date (ISO 8601)'),
       notes: z.string().optional().describe('Notes'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      vendor_id: z.string().uuid().optional().describe('Vendor ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      vendor_id: z.string().guid().optional().describe('Vendor ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -2084,7 +2090,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .describe('Purchase order ID (required) - resolve via list_purchase_orders'),
       description: z.string().min(1).max(2000).describe('What is being ordered (required)'),
       quantity: z.number().positive().describe('Quantity ordered (required)'),
@@ -2100,7 +2106,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .describe('Quantity received so far, 0 to quantity'),
       part_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Part from inventory - resolve via list_parts'),
       line_number: z.number().int().min(1).optional().describe('Position on the order'),
@@ -2119,7 +2125,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_purchase_order_line',
     "Update a purchase order line item. Requires purchase_orders:write scope. To receive goods, set quantity_received; for a line with a part, the change is added to (or taken from) that part's stock. A line with stock received cannot change its part.",
     {
-      id: z.string().uuid().describe('Purchase order line ID'),
+      id: z.string().guid().describe('Purchase order line ID'),
       description: z.string().min(1).max(2000).optional().describe('What is being ordered'),
       quantity: z.number().positive().optional().describe('Quantity ordered'),
       unit_cost: z
@@ -2132,7 +2138,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .min(0)
         .optional()
         .describe('Quantity received so far, 0 to quantity'),
-      part_id: z.string().uuid().optional().describe('Part from inventory'),
+      part_id: z.string().guid().optional().describe('Part from inventory'),
       line_number: z.number().int().min(1).optional().describe('Position on the order'),
     },
     async ({ id, ...rest }) => {
@@ -2148,7 +2154,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_purchase_order_line',
     'Delete a purchase order line item. Requires purchase_orders:write scope. A line with stock received is refused until its quantity_received is set back to 0.',
-    { id: z.string().uuid().describe('Purchase order line ID') },
+    { id: z.string().guid().describe('Purchase order line ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('purchase-order-lines', id)
@@ -2163,20 +2169,20 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_purchase_order_link',
     'Link a purchase order to a work order, PM schedule or project for reference. Requires purchase_orders:write scope. Required: purchase_order_id and exactly one of work_order_id, pm_schedule_id, project_id. A link does not add to committed cost; to charge the cost, set project_id or work_order_id on the purchase order itself.',
     {
-      purchase_order_id: z.string().uuid().describe('Purchase order ID (required)'),
+      purchase_order_id: z.string().guid().describe('Purchase order ID (required)'),
       work_order_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Work order to link - resolve via list_work_orders'),
       pm_schedule_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('PM schedule to link - resolve via list_pm_schedules'),
       project_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Project to link - resolve via list_projects'),
     },
@@ -2193,7 +2199,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_purchase_order_link',
     'Remove a purchase order link. Requires purchase_orders:write scope.',
-    { id: z.string().uuid().describe('Purchase order link ID') },
+    { id: z.string().guid().describe('Purchase order link ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('purchase-order-links', id)
@@ -2207,7 +2213,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_purchase_order',
     'Delete a purchase order by ID. Requires purchase_orders:write scope.',
-    { id: z.string().uuid().describe('Purchase order ID') },
+    { id: z.string().guid().describe('Purchase order ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('purchase-orders', id)
@@ -2226,12 +2232,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_expense',
     'Create a new expense. Requires expenses:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       description: z.string().min(1).describe('Expense description (required)'),
       amount: z.number().min(0).describe('Expense amount (required)'),
       expense_date: z.string().describe('Expense date (ISO 8601, required)'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
       receipt_url: z.string().max(2000).optional().describe('Receipt URL'),
       notes: z.string().optional().describe('Notes'),
     },
@@ -2249,13 +2255,13 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_expense',
     'Update an existing expense by ID. Requires expenses:write scope.',
     {
-      id: z.string().uuid().describe('Expense ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Expense ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       description: z.string().optional().describe('Expense description'),
       amount: z.number().min(0).optional().describe('Expense amount'),
       expense_date: z.string().optional().describe('Expense date (ISO 8601)'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
       receipt_url: z.string().max(2000).optional().describe('Receipt URL'),
       notes: z.string().optional().describe('Notes'),
     },
@@ -2272,7 +2278,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_expense',
     'Delete an expense by ID. Requires expenses:write scope.',
-    { id: z.string().uuid().describe('Expense ID') },
+    { id: z.string().guid().describe('Expense ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('expenses', id)
@@ -2297,9 +2303,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       status: z.enum(['draft', 'submitted', 'approved', 'rejected']).optional().describe('Status'),
       reason: z.string().optional().describe('Reason for the change order'),
       notes: z.string().optional().describe('Additional notes'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      vendor_id: z.string().uuid().optional().describe('Vendor ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      vendor_id: z.string().guid().optional().describe('Vendor ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
     },
     async params => {
       try {
@@ -2315,16 +2321,16 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_change_order',
     'Update an existing change order by ID. Requires change_orders:write scope.',
     {
-      id: z.string().uuid().describe('Change order ID'),
+      id: z.string().guid().describe('Change order ID'),
       co_number: z.string().min(1).max(200).optional().describe('Change order number'),
       description: z.string().optional().describe('Description'),
       amount: z.number().optional().describe('Amount (negative for credits)'),
       status: z.enum(['draft', 'submitted', 'approved', 'rejected']).optional().describe('Status'),
       reason: z.string().optional().describe('Reason'),
       notes: z.string().optional().describe('Notes'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      vendor_id: z.string().uuid().optional().describe('Vendor ID'),
-      category_id: z.string().uuid().optional().describe('Cost category ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      vendor_id: z.string().guid().optional().describe('Vendor ID'),
+      category_id: z.string().guid().optional().describe('Cost category ID'),
       approved_by: z.string().optional().describe('Approved by (user ID)'),
       approved_at: z.string().optional().describe('Approval date (ISO 8601)'),
     },
@@ -2341,7 +2347,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_change_order',
     'Delete a change order by ID. Requires change_orders:write scope.',
-    { id: z.string().uuid().describe('Change order ID') },
+    { id: z.string().guid().describe('Change order ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('change-orders', id)
@@ -2382,7 +2388,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_document_folder_template',
     'Update a project document folder template by ID. Requires project_document_folder_templates:write scope.',
     {
-      id: z.string().uuid().describe('Template ID'),
+      id: z.string().guid().describe('Template ID'),
       name: z.string().min(1).max(500).optional().describe('Template name'),
       description: z.string().max(2000).optional().describe('Template description'),
       structure: z
@@ -2404,7 +2410,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_document_folder_template',
     'Delete a project document folder template by ID. Requires project_document_folder_templates:write scope.',
-    { id: z.string().uuid().describe('Template ID') },
+    { id: z.string().guid().describe('Template ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-document-folder-templates', id)
@@ -2433,10 +2439,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .describe(
           'Workspace the budget belongs to. Omit for an organization-wide budget; set it when the organization budgets facilities and infrastructure separately.'
         ),
-      site_id: z.string().uuid().optional().describe('Site ID. Not read by the Budget tab.'),
+      site_id: z.string().guid().optional().describe('Site ID. Not read by the Budget tab.'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID. Not read by the Budget tab.'),
       budgeted_amount: z.number().min(0).optional().describe('Budgeted amount'),
@@ -2456,7 +2462,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_budget',
     'Update an existing budget by ID. Requires budgets:write scope.',
     {
-      id: z.string().uuid().describe('Budget ID'),
+      id: z.string().guid().describe('Budget ID'),
       year: z.number().int().min(2000).max(2100).optional().describe('Budget year'),
       funding_source: z.enum(['O&M', 'Capital']).optional().describe("'O&M' or 'Capital'"),
       module: z
@@ -2464,10 +2470,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .nullable()
         .optional()
         .describe('Workspace; null for organization-wide'),
-      site_id: z.string().uuid().optional().describe('Site ID. Not read by the Budget tab.'),
+      site_id: z.string().guid().optional().describe('Site ID. Not read by the Budget tab.'),
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building ID. Not read by the Budget tab.'),
       budgeted_amount: z.number().min(0).optional().describe('Budgeted amount'),
@@ -2486,7 +2492,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_budget',
     'Delete a budget by ID. Requires budgets:write scope.',
-    { id: z.string().uuid().describe('Budget ID') },
+    { id: z.string().guid().describe('Budget ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('budgets', id)
@@ -2505,7 +2511,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_asset_comment',
     'Create a new comment on an asset. Requires asset_comments:write scope.',
     {
-      asset_id: z.string().uuid().describe('Asset ID (required)'),
+      asset_id: z.string().guid().describe('Asset ID (required)'),
       comment: z.string().min(1).describe('Comment text (required)'),
     },
     async params => {
@@ -2522,7 +2528,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_comment',
     'Update an existing asset comment by ID. Requires asset_comments:write scope.',
     {
-      id: z.string().uuid().describe('Asset comment ID'),
+      id: z.string().guid().describe('Asset comment ID'),
       comment: z.string().min(1).optional().describe('Comment text'),
     },
     async ({ id, ...rest }) => {
@@ -2538,7 +2544,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_comment',
     'Delete an asset comment by ID. Requires asset_comments:write scope.',
-    { id: z.string().uuid().describe('Asset comment ID') },
+    { id: z.string().guid().describe('Asset comment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-comments', id)
@@ -2557,7 +2563,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_work_order_comment',
     'Create a new comment on a work order. Requires work_order_comments:write scope.',
     {
-      work_order_id: z.string().uuid().describe('Work order ID (required)'),
+      work_order_id: z.string().guid().describe('Work order ID (required)'),
       comment: z.string().min(1).describe('Comment text (required)'),
     },
     async params => {
@@ -2574,7 +2580,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_work_order_comment',
     'Update an existing work order comment by ID. Requires work_order_comments:write scope.',
     {
-      id: z.string().uuid().describe('Work order comment ID'),
+      id: z.string().guid().describe('Work order comment ID'),
       comment: z.string().min(1).optional().describe('Comment text'),
     },
     async ({ id, ...rest }) => {
@@ -2590,7 +2596,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_work_order_comment',
     'Delete a work order comment by ID. Requires work_order_comments:write scope.',
-    { id: z.string().uuid().describe('Work order comment ID') },
+    { id: z.string().guid().describe('Work order comment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('work-order-comments', id)
@@ -2609,7 +2615,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_work_order_schedule',
     "Schedule a work order for a technician on a date (one entry of a day plan). stop_order gives the position in the technician's day; leave it unset for an unordered calendar entry. Requires work_order_schedules:write scope.",
     {
-      work_order_id: z.string().uuid().describe('Work order ID (required)'),
+      work_order_id: z.string().guid().describe('Work order ID (required)'),
       technician_id: z.string().min(1).describe('Technician Clerk user ID (required)'),
       scheduled_date: z.string().describe('Date (YYYY-MM-DD, required)'),
       scheduled_start_time: z.string().optional().describe('Start time (HH:MM)'),
@@ -2633,7 +2639,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_work_order_schedule',
     'Update a work order schedule entry by ID (date, times, stop_order, notes). work_order_id is immutable. Requires work_order_schedules:write scope.',
     {
-      id: z.string().uuid().describe('Work order schedule ID'),
+      id: z.string().guid().describe('Work order schedule ID'),
       technician_id: z.string().min(1).optional().describe('Technician Clerk user ID'),
       scheduled_date: z.string().optional().describe('Date (YYYY-MM-DD)'),
       scheduled_start_time: z.string().optional().describe('Start time (HH:MM)'),
@@ -2656,7 +2662,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_work_order_schedule',
     "Delete a work order schedule entry by ID (removes the stop from the technician's day). Requires work_order_schedules:write scope.",
-    { id: z.string().uuid().describe('Work order schedule ID') },
+    { id: z.string().guid().describe('Work order schedule ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('work-order-schedules', id)
@@ -2675,9 +2681,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_comment',
     'Create a new comment on a project. Requires project_comments:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       content: z.string().min(1).describe('Comment content (required)'),
-      parent_id: z.string().uuid().optional().describe('Parent comment ID (for threading)'),
+      parent_id: z.string().guid().optional().describe('Parent comment ID (for threading)'),
     },
     async params => {
       try {
@@ -2693,9 +2699,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_comment',
     'Update an existing project comment by ID. Requires project_comments:write scope.',
     {
-      id: z.string().uuid().describe('Project comment ID'),
+      id: z.string().guid().describe('Project comment ID'),
       content: z.string().min(1).optional().describe('Comment content'),
-      parent_id: z.string().uuid().optional().describe('Parent comment ID'),
+      parent_id: z.string().guid().optional().describe('Parent comment ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -2710,7 +2716,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_comment',
     'Delete a project comment by ID. Requires project_comments:write scope.',
-    { id: z.string().uuid().describe('Project comment ID') },
+    { id: z.string().guid().describe('Project comment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-comments', id)
@@ -2734,16 +2740,16 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .describe('Cost category (required)'),
       amount: z.number().min(0).describe('Cost amount (required)'),
       cost_date: z.string().describe('Cost date (ISO 8601, required)'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
-      site_id: z.string().uuid().optional().describe('Site ID'),
-      building_id: z.string().uuid().optional().describe('Building ID'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
+      site_id: z.string().guid().optional().describe('Site ID'),
+      building_id: z.string().guid().optional().describe('Building ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
       description: z.string().optional().describe('Description'),
       invoice_number: z.string().max(200).optional().describe('Invoice number (free text)'),
       po_number: z.string().max(200).optional().describe('Purchase order number (free text)'),
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           "Purchase order that paid this cost - resolve via list_purchase_orders. Counts against the order's remaining balance unless the cost belongs to a work order."
@@ -2763,23 +2769,23 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_cost',
     'Update an existing asset cost entry by ID - the record type shown on the AssetLab "Expenses" page. Requires asset_costs:write scope.',
     {
-      id: z.string().uuid().describe('Asset cost ID'),
+      id: z.string().guid().describe('Asset cost ID'),
       category: z
         .enum(['Repair', 'PM', 'Operation', 'Replacement', 'Decommission', 'Other'])
         .optional()
         .describe('Cost category'),
       amount: z.number().min(0).optional().describe('Cost amount'),
       cost_date: z.string().optional().describe('Cost date (ISO 8601)'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
-      site_id: z.string().uuid().optional().describe('Site ID'),
-      building_id: z.string().uuid().optional().describe('Building ID'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
+      site_id: z.string().guid().optional().describe('Site ID'),
+      building_id: z.string().guid().optional().describe('Building ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
       description: z.string().optional().describe('Description'),
       invoice_number: z.string().max(200).optional().describe('Invoice number (free text)'),
       po_number: z.string().max(200).optional().describe('Purchase order number (free text)'),
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .nullable()
         .optional()
         .describe(
@@ -2799,7 +2805,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_cost',
     'Delete an asset cost entry by ID. Requires asset_costs:write scope.',
-    { id: z.string().uuid().describe('Asset cost ID') },
+    { id: z.string().guid().describe('Asset cost ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-costs', id)
@@ -2818,7 +2824,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_asset_replacement_plan',
     'Create a new asset replacement plan. Requires asset_replacement_plans:write scope.',
     {
-      asset_id: z.string().uuid().describe('Asset ID (required)'),
+      asset_id: z.string().guid().describe('Asset ID (required)'),
       planned_replacement_year: z
         .number()
         .int()
@@ -2848,8 +2854,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_replacement_plan',
     'Update an existing asset replacement plan by ID. Requires asset_replacement_plans:write scope.',
     {
-      id: z.string().uuid().describe('Asset replacement plan ID'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
+      id: z.string().guid().describe('Asset replacement plan ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
       planned_replacement_year: z
         .number()
         .int()
@@ -2879,7 +2885,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_replacement_plan',
     'Delete an asset replacement plan by ID. Requires asset_replacement_plans:write scope.',
-    { id: z.string().uuid().describe('Asset replacement plan ID') },
+    { id: z.string().guid().describe('Asset replacement plan ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-replacement-plans', id)
@@ -2898,10 +2904,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_task',
     'Create a new project task. Requires project_tasks:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       title: z.string().min(1).max(500).describe('Task title (required)'),
       description: z.string().optional().describe('Description'),
-      phase_id: z.string().uuid().optional().describe('Phase ID'),
+      phase_id: z.string().guid().optional().describe('Phase ID'),
       status: z
         .enum(['todo', 'in_progress', 'completed', 'blocked', 'cancelled'])
         .optional()
@@ -2927,11 +2933,11 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_task',
     'Update an existing project task by ID. Requires project_tasks:write scope.',
     {
-      id: z.string().uuid().describe('Project task ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project task ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       title: z.string().min(1).max(500).optional().describe('Task title'),
       description: z.string().optional().describe('Description'),
-      phase_id: z.string().uuid().optional().describe('Phase ID'),
+      phase_id: z.string().guid().optional().describe('Phase ID'),
       status: z
         .enum(['todo', 'in_progress', 'completed', 'blocked', 'cancelled'])
         .optional()
@@ -2956,7 +2962,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_task',
     'Delete a project task by ID. Requires project_tasks:write scope.',
-    { id: z.string().uuid().describe('Project task ID') },
+    { id: z.string().guid().describe('Project task ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-tasks', id)
@@ -2975,7 +2981,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_milestone',
     'Create a new project milestone. Requires project_milestones:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       name: z.string().min(1).max(500).describe('Milestone name (required)'),
       due_date: z.string().describe('Due date (ISO 8601, required)'),
       description: z.string().optional().describe('Description'),
@@ -2999,8 +3005,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_milestone',
     'Update an existing project milestone by ID. Requires project_milestones:write scope.',
     {
-      id: z.string().uuid().describe('Project milestone ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project milestone ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       name: z.string().min(1).max(500).optional().describe('Milestone name'),
       due_date: z.string().optional().describe('Due date (ISO 8601)'),
       description: z.string().optional().describe('Description'),
@@ -3023,7 +3029,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_milestone',
     'Delete a project milestone by ID. Requires project_milestones:write scope.',
-    { id: z.string().uuid().describe('Project milestone ID') },
+    { id: z.string().guid().describe('Project milestone ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-milestones', id)
@@ -3042,7 +3048,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_phase',
     'Create a new project phase. Requires project_phases:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       name: z.string().min(1).max(500).describe('Phase name (required)'),
       description: z.string().optional().describe('Description'),
       status: z
@@ -3067,8 +3073,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_phase',
     'Update an existing project phase by ID. Requires project_phases:write scope.',
     {
-      id: z.string().uuid().describe('Project phase ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project phase ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       name: z.string().min(1).max(500).optional().describe('Phase name'),
       description: z.string().optional().describe('Description'),
       status: z
@@ -3092,7 +3098,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_phase',
     'Delete a project phase by ID. Requires project_phases:write scope.',
-    { id: z.string().uuid().describe('Project phase ID') },
+    { id: z.string().guid().describe('Project phase ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-phases', id)
@@ -3111,7 +3117,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_budget_item',
     'Create a new project budget item. Requires project_budget_items:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       category: z
         .enum([
           'labor',
@@ -3141,8 +3147,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_budget_item',
     'Update an existing project budget item by ID. Requires project_budget_items:write scope.',
     {
-      id: z.string().uuid().describe('Project budget item ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project budget item ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       category: z
         .enum([
           'labor',
@@ -3172,7 +3178,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_budget_item',
     'Delete a project budget item by ID. Requires project_budget_items:write scope.',
-    { id: z.string().uuid().describe('Project budget item ID') },
+    { id: z.string().guid().describe('Project budget item ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-budget-items', id)
@@ -3191,8 +3197,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_time_entry',
     'Create a new project time entry. Requires project_time_entries:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      task_id: z.string().uuid().describe('Task ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      task_id: z.string().guid().describe('Task ID (required)'),
       user_id: z.string().min(1).describe('User ID (required)'),
       start_time: z.string().describe('Start time (ISO 8601 datetime, required)'),
       end_time: z.string().optional().describe('End time (ISO 8601 datetime)'),
@@ -3215,9 +3221,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_time_entry',
     'Update an existing project time entry by ID. Requires project_time_entries:write scope.',
     {
-      id: z.string().uuid().describe('Project time entry ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      task_id: z.string().uuid().optional().describe('Task ID'),
+      id: z.string().guid().describe('Project time entry ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      task_id: z.string().guid().optional().describe('Task ID'),
       user_id: z.string().optional().describe('User ID'),
       start_time: z.string().optional().describe('Start time (ISO 8601 datetime)'),
       end_time: z.string().optional().describe('End time (ISO 8601 datetime)'),
@@ -3239,7 +3245,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_time_entry',
     'Delete a project time entry by ID. Requires project_time_entries:write scope.',
-    { id: z.string().uuid().describe('Project time entry ID') },
+    { id: z.string().guid().describe('Project time entry ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-time-entries', id)
@@ -3279,7 +3285,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_manufacturer',
     'Update an existing manufacturer by ID. Requires manufacturers:write scope.',
     {
-      id: z.string().uuid().describe('Manufacturer ID'),
+      id: z.string().guid().describe('Manufacturer ID'),
       name: z.string().min(1).max(500).optional().describe('Manufacturer name'),
       website: z.string().max(500).optional().describe('Website URL'),
       contact_name: z.string().max(500).optional().describe('Primary contact name'),
@@ -3300,7 +3306,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_manufacturer',
     'Delete a manufacturer by ID. Requires manufacturers:write scope.',
-    { id: z.string().uuid().describe('Manufacturer ID') },
+    { id: z.string().guid().describe('Manufacturer ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('manufacturers', id)
@@ -3321,7 +3327,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       name: z.string().min(1).max(500).describe('Asset type name (required)'),
       description: z.string().max(2000).optional().describe('Description'),
-      group_id: z.string().uuid().optional().describe('Group ID'),
+      group_id: z.string().guid().optional().describe('Group ID'),
     },
     async params => {
       try {
@@ -3337,10 +3343,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_type',
     'Update an existing asset type by ID. Requires asset_types:write scope.',
     {
-      id: z.string().uuid().describe('Asset type ID'),
+      id: z.string().guid().describe('Asset type ID'),
       name: z.string().min(1).max(500).optional().describe('Asset type name'),
       description: z.string().max(2000).optional().describe('Description'),
-      group_id: z.string().uuid().optional().describe('Group ID'),
+      group_id: z.string().guid().optional().describe('Group ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -3355,7 +3361,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_type',
     'Delete an asset type by ID. Requires asset_types:write scope.',
-    { id: z.string().uuid().describe('Asset type ID') },
+    { id: z.string().guid().describe('Asset type ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-types', id)
@@ -3394,7 +3400,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_work_category',
     'Update an existing work category by ID. Requires work_categories:write scope.',
     {
-      id: z.string().uuid().describe('Work category ID'),
+      id: z.string().guid().describe('Work category ID'),
       name: z.string().min(1).max(500).optional().describe('Work category name'),
       description: z.string().max(2000).optional().describe('Description'),
       module: WORKSPACE.optional().describe(
@@ -3414,7 +3420,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_work_category',
     'Delete a work category by ID. Requires work_categories:write scope.',
-    { id: z.string().uuid().describe('Work category ID') },
+    { id: z.string().guid().describe('Work category ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('work-categories', id)
@@ -3451,7 +3457,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_type_group',
     'Update an existing asset type group by ID. Requires asset_type_groups:write scope.',
     {
-      id: z.string().uuid().describe('Asset type group ID'),
+      id: z.string().guid().describe('Asset type group ID'),
       name: z.string().min(1).max(500).optional().describe('Group name'),
       description: z.string().max(2000).optional().describe('Description'),
       color: z.string().max(50).optional().describe('Color hex code (e.g., #6366f1)'),
@@ -3469,7 +3475,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_type_group',
     'Delete an asset type group by ID. Requires asset_type_groups:write scope.',
-    { id: z.string().uuid().describe('Asset type group ID') },
+    { id: z.string().guid().describe('Asset type group ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-type-groups', id)
@@ -3505,7 +3511,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_building_type',
     'Update an existing building type by ID. Requires building_types:write scope.',
     {
-      id: z.string().uuid().describe('Building type ID'),
+      id: z.string().guid().describe('Building type ID'),
       name: z.string().min(1).max(500).optional().describe('Building type name'),
       description: z.string().max(2000).optional().describe('Description'),
     },
@@ -3522,7 +3528,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_building_type',
     'Delete a building type by ID. Requires building_types:write scope.',
-    { id: z.string().uuid().describe('Building type ID') },
+    { id: z.string().guid().describe('Building type ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('building-types', id)
@@ -3558,7 +3564,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_location_type',
     'Update an existing location type by ID. Requires location_types:write scope.',
     {
-      id: z.string().uuid().describe('Location type ID'),
+      id: z.string().guid().describe('Location type ID'),
       name: z.string().min(1).max(500).optional().describe('Location type name'),
       description: z.string().max(2000).optional().describe('Description'),
     },
@@ -3575,7 +3581,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_location_type',
     'Delete a location type by ID. Requires location_types:write scope.',
-    { id: z.string().uuid().describe('Location type ID') },
+    { id: z.string().guid().describe('Location type ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('location-types', id)
@@ -3618,7 +3624,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_phase_category',
     'Update an existing project phase category by ID. Requires project_phase_categories:write scope.',
     {
-      id: z.string().uuid().describe('Project phase category ID'),
+      id: z.string().guid().describe('Project phase category ID'),
       name: z.string().min(1).max(500).optional().describe('Phase name'),
       description: z.string().max(2000).optional().describe('Description'),
       sort_order: z
@@ -3642,7 +3648,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_phase_category',
     'Delete a project phase category by ID. Requires project_phase_categories:write scope.',
-    { id: z.string().uuid().describe('Project phase category ID') },
+    { id: z.string().guid().describe('Project phase category ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-phase-categories', id)
@@ -3662,7 +3668,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'Create a new cost category. Requires cost_categories:write scope.',
     {
       name: z.string().min(1).max(500).describe('Cost category name (required)'),
-      parent_id: z.string().uuid().optional().describe('Parent cost category ID'),
+      parent_id: z.string().guid().optional().describe('Parent cost category ID'),
       is_active: z.boolean().optional().describe('Whether the category is active'),
     },
     async params => {
@@ -3679,9 +3685,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_cost_category',
     'Update an existing cost category by ID. Requires cost_categories:write scope.',
     {
-      id: z.string().uuid().describe('Cost category ID'),
+      id: z.string().guid().describe('Cost category ID'),
       name: z.string().min(1).max(500).optional().describe('Cost category name'),
-      parent_id: z.string().uuid().optional().describe('Parent cost category ID'),
+      parent_id: z.string().guid().optional().describe('Parent cost category ID'),
       is_active: z.boolean().optional().describe('Whether the category is active'),
     },
     async ({ id, ...rest }) => {
@@ -3697,7 +3703,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_cost_category',
     'Delete a cost category by ID. Requires cost_categories:write scope.',
-    { id: z.string().uuid().describe('Cost category ID') },
+    { id: z.string().guid().describe('Cost category ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('cost-categories', id)
@@ -3736,7 +3742,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_part_category',
     'Update an existing part category by ID. Requires part_categories:write scope.',
     {
-      id: z.string().uuid().describe('Part category ID'),
+      id: z.string().guid().describe('Part category ID'),
       name: z.string().min(1).max(500).optional().describe('Part category name'),
       description: z.string().max(2000).optional().describe('Description'),
       module: WORKSPACE.optional().describe(
@@ -3756,7 +3762,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_part_category',
     'Delete a part category by ID. Requires part_categories:write scope.',
-    { id: z.string().uuid().describe('Part category ID') },
+    { id: z.string().guid().describe('Part category ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('part-categories', id)
@@ -3775,8 +3781,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_asset_part',
     'Link a part to an asset (creates an asset-part association). Requires asset_parts:write scope.',
     {
-      asset_id: z.string().uuid().describe('Asset ID (required)'),
-      part_id: z.string().uuid().describe('Part ID (required)'),
+      asset_id: z.string().guid().describe('Asset ID (required)'),
+      part_id: z.string().guid().describe('Part ID (required)'),
       quantity: z.number().min(0).optional().describe('Quantity of this part on the asset'),
     },
     async params => {
@@ -3793,7 +3799,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_part',
     'Update the quantity of an asset-part association by ID. Requires asset_parts:write scope.',
     {
-      id: z.string().uuid().describe('Asset-part association ID'),
+      id: z.string().guid().describe('Asset-part association ID'),
       quantity: z.number().min(0).optional().describe('New quantity'),
     },
     async ({ id, ...rest }) => {
@@ -3809,7 +3815,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_part',
     'Remove a part from an asset by association ID. Requires asset_parts:write scope.',
-    { id: z.string().uuid().describe('Asset-part association ID') },
+    { id: z.string().guid().describe('Asset-part association ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-parts', id)
@@ -3830,7 +3836,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       name: z.string().min(1).max(500).describe('System name (required)'),
       description: z.string().max(2000).optional().describe('Description'),
-      system_group_id: z.string().uuid().optional().describe('System group ID'),
+      system_group_id: z.string().guid().optional().describe('System group ID'),
       crv_multiplier: z.number().min(0).optional().describe('CRV multiplier'),
     },
     async params => {
@@ -3847,10 +3853,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_system',
     'Update an existing system by ID. Requires systems:write scope.',
     {
-      id: z.string().uuid().describe('System ID'),
+      id: z.string().guid().describe('System ID'),
       name: z.string().min(1).max(500).optional().describe('System name'),
       description: z.string().max(2000).optional().describe('Description'),
-      system_group_id: z.string().uuid().optional().describe('System group ID'),
+      system_group_id: z.string().guid().optional().describe('System group ID'),
       crv_multiplier: z.number().min(0).optional().describe('CRV multiplier'),
     },
     async ({ id, ...rest }) => {
@@ -3866,7 +3872,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_system',
     'Delete a system by ID. Requires systems:write scope.',
-    { id: z.string().uuid().describe('System ID') },
+    { id: z.string().guid().describe('System ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('systems', id)
@@ -3902,7 +3908,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_system_class',
     'Update an existing system class by ID. Requires systems:write scope.',
     {
-      id: z.string().uuid().describe('System class ID'),
+      id: z.string().guid().describe('System class ID'),
       name: z.string().min(1).max(500).optional().describe('System class name'),
       description: z.string().max(2000).optional().describe('Description'),
     },
@@ -3919,7 +3925,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_system_class',
     'Delete a system class by ID. Requires systems:write scope.',
-    { id: z.string().uuid().describe('System class ID') },
+    { id: z.string().guid().describe('System class ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('system-classes', id)
@@ -3940,7 +3946,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       name: z.string().min(1).max(500).describe('System group name (required)'),
       description: z.string().max(2000).optional().describe('Description'),
-      system_class_id: z.string().uuid().optional().describe('Parent system class ID'),
+      system_class_id: z.string().guid().optional().describe('Parent system class ID'),
     },
     async params => {
       try {
@@ -3956,10 +3962,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_system_group',
     'Update an existing system group by ID. Requires systems:write scope.',
     {
-      id: z.string().uuid().describe('System group ID'),
+      id: z.string().guid().describe('System group ID'),
       name: z.string().min(1).max(500).optional().describe('System group name'),
       description: z.string().max(2000).optional().describe('Description'),
-      system_class_id: z.string().uuid().optional().describe('Parent system class ID'),
+      system_class_id: z.string().guid().optional().describe('Parent system class ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -3974,7 +3980,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_system_group',
     'Delete a system group by ID. Requires systems:write scope.',
-    { id: z.string().uuid().describe('System group ID') },
+    { id: z.string().guid().describe('System group ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('system-groups', id)
@@ -3994,8 +4000,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_vendor_site_assignment',
     'Assign a vendor to a site. Requires vendor_site_assignments:write scope.',
     {
-      vendor_id: z.string().uuid().describe('Vendor ID (required)'),
-      site_id: z.string().uuid().describe('Site ID (required)'),
+      vendor_id: z.string().guid().describe('Vendor ID (required)'),
+      site_id: z.string().guid().describe('Site ID (required)'),
     },
     async params => {
       try {
@@ -4010,7 +4016,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_vendor_site_assignment',
     'Remove a vendor-site assignment by ID. Requires vendor_site_assignments:write scope.',
-    { id: z.string().uuid().describe('Vendor-site assignment ID') },
+    { id: z.string().guid().describe('Vendor-site assignment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('vendor-site-assignments', id)
@@ -4030,8 +4036,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_contract_site',
     'Assign a contract to a site. Requires contract_sites:write scope.',
     {
-      contract_id: z.string().uuid().describe('Contract ID (required)'),
-      site_id: z.string().uuid().describe('Site ID (required)'),
+      contract_id: z.string().guid().describe('Contract ID (required)'),
+      site_id: z.string().guid().describe('Site ID (required)'),
     },
     async params => {
       try {
@@ -4047,8 +4053,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'delete_contract_site',
     'Remove a contract from a site. Requires contract_sites:write scope. An assignment is identified by its contract and site; it has no id of its own.',
     {
-      contract_id: z.string().uuid().describe('Contract ID (required)'),
-      site_id: z.string().uuid().describe('Site ID (required)'),
+      contract_id: z.string().guid().describe('Contract ID (required)'),
+      site_id: z.string().guid().describe('Site ID (required)'),
     },
     async ({ contract_id, site_id }) => {
       try {
@@ -4096,7 +4102,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_custom_field_definition',
     'Update an existing custom field definition by ID. Requires custom_fields:write scope.',
     {
-      id: z.string().uuid().describe('Custom field definition ID'),
+      id: z.string().guid().describe('Custom field definition ID'),
       entity_type: z.string().min(1).max(100).optional().describe('Entity type'),
       field_name: z.string().min(1).max(200).optional().describe('Field name / key'),
       field_type: z
@@ -4121,7 +4127,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_custom_field_definition',
     'Delete a custom field definition by ID. Requires custom_fields:write scope.',
-    { id: z.string().uuid().describe('Custom field definition ID') },
+    { id: z.string().guid().describe('Custom field definition ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('custom-field-definitions', id)
@@ -4140,10 +4146,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_custom_field_value',
     "Create (upsert) a custom field value for an entity. The table stores values in typed columns - prefer setting the one that matches the field definition's field_type: value_text (text/select), value_number (number), value_date (date, ISO YYYY-MM-DD), value_boolean (boolean). Alternatively pass a single `value` string and the server will dispatch it to the right column based on field_type. Writes upsert on (entity_id, field_definition_id) so replaying a batch is idempotent. Requires custom_fields:write scope.",
     {
-      entity_id: z.string().uuid().describe('Entity ID - e.g. asset.id, work_order.id (required)'),
+      entity_id: z.string().guid().describe('Entity ID - e.g. asset.id, work_order.id (required)'),
       field_definition_id: z
         .string()
-        .uuid()
+        .guid()
         .describe(
           'Custom field definition ID - resolve via list_custom_field_definitions (required)'
         ),
@@ -4190,11 +4196,11 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_custom_field_value',
     "Update an existing custom field value by ID. Set whichever typed column matches the definition's field_type (value_text / value_number / value_date / value_boolean), or pass a single `value` and the server will dispatch it. Requires custom_fields:write scope.",
     {
-      id: z.string().uuid().describe('Custom field value ID'),
-      entity_id: z.string().uuid().optional().describe('Entity ID'),
+      id: z.string().guid().describe('Custom field value ID'),
+      entity_id: z.string().guid().optional().describe('Entity ID'),
       field_definition_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Custom field definition ID - required when using the `value` fallback if you want to avoid the server fetching it'
@@ -4222,7 +4228,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_custom_field_value',
     'Delete a custom field value by ID. Requires custom_fields:write scope.',
-    { id: z.string().uuid().describe('Custom field value ID') },
+    { id: z.string().guid().describe('Custom field value ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('custom-field-values', id)
@@ -4249,7 +4255,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .max(500)
         .optional()
         .describe('DEPRECATED - legacy free-text supplier name. Use supplier_id instead.'),
-      supplier_id: z.string().uuid().optional().describe('Vendor ID (resolve via list_vendors)'),
+      supplier_id: z.string().guid().optional().describe('Vendor ID (resolve via list_vendors)'),
       cost: z.number().min(0).optional().describe('Unit cost'),
       quantity: z
         .number()
@@ -4266,9 +4272,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Target / reorder quantity'),
       specific_location: z.string().max(500).optional().describe('Storage location description'),
-      site_id: z.string().uuid().optional().describe('Site ID'),
-      building_id: z.string().uuid().optional().describe('Building ID'),
-      location_id: z.string().uuid().optional().describe('Location ID'),
+      site_id: z.string().guid().optional().describe('Site ID'),
+      building_id: z.string().guid().optional().describe('Building ID'),
+      location_id: z.string().guid().optional().describe('Location ID'),
     },
     async params => {
       try {
@@ -4284,7 +4290,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_part',
     'Update an existing part/inventory item by ID. Requires parts:write scope.',
     {
-      id: z.string().uuid().describe('Part ID'),
+      id: z.string().guid().describe('Part ID'),
       name: z.string().min(1).max(500).optional().describe('Part name'),
       part_number: z.string().max(200).optional().describe('Part number / SKU'),
       category: z.string().max(200).optional().describe('Category label'),
@@ -4293,7 +4299,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .max(500)
         .optional()
         .describe('DEPRECATED - legacy free-text supplier name. Use supplier_id instead.'),
-      supplier_id: z.string().uuid().optional().describe('Vendor ID (resolve via list_vendors)'),
+      supplier_id: z.string().guid().optional().describe('Vendor ID (resolve via list_vendors)'),
       cost: z.number().min(0).optional().describe('Unit cost'),
       quantity: z
         .number()
@@ -4310,9 +4316,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Target / reorder quantity'),
       specific_location: z.string().max(500).optional().describe('Storage location description'),
-      site_id: z.string().uuid().optional().describe('Site ID'),
-      building_id: z.string().uuid().optional().describe('Building ID'),
-      location_id: z.string().uuid().optional().describe('Location ID'),
+      site_id: z.string().guid().optional().describe('Site ID'),
+      building_id: z.string().guid().optional().describe('Building ID'),
+      location_id: z.string().guid().optional().describe('Location ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -4327,7 +4333,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_part',
     'Delete a part/inventory item by ID. Requires parts:write scope.',
-    { id: z.string().uuid().describe('Part ID') },
+    { id: z.string().guid().describe('Part ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('parts', id)
@@ -4421,7 +4427,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .min(1)
         .max(2000)
         .describe('Storage path from upload URL response (required)'),
-      asset_id: z.string().uuid().describe('Asset ID this document belongs to (required)'),
+      asset_id: z.string().guid().describe('Asset ID this document belongs to (required)'),
       category: z
         .enum(['om', 'commissioning', 'warranty', 'installation', 'specification', 'other'])
         .optional()
@@ -4445,10 +4451,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_document',
     'Update an asset document by ID. Requires asset_documents:write scope.',
     {
-      id: z.string().uuid().describe('Asset document ID'),
+      id: z.string().guid().describe('Asset document ID'),
       name: z.string().min(1).max(500).optional().describe('Document name'),
       file_path: z.string().max(2000).optional().describe('Storage path'),
-      asset_id: z.string().uuid().optional().describe('Asset ID'),
+      asset_id: z.string().guid().optional().describe('Asset ID'),
       category: z
         .enum(['om', 'commissioning', 'warranty', 'installation', 'specification', 'other'])
         .optional()
@@ -4471,7 +4477,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_document',
     'Delete an asset document by ID. Requires asset_documents:write scope.',
-    { id: z.string().uuid().describe('Asset document ID') },
+    { id: z.string().guid().describe('Asset document ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-documents', id)
@@ -4498,22 +4504,22 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       description: z.string().optional().describe('Description'),
       work_order_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Work order ID (exactly one parent required)'),
       work_request_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Work request ID (exactly one parent required)'),
       pm_schedule_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('PM schedule ID (exactly one parent required)'),
       pm_template_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('PM template ID (exactly one parent required)'),
     },
@@ -4531,17 +4537,17 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_attachment',
     'Update an attachment by ID. Requires attachments:write scope.',
     {
-      id: z.string().uuid().describe('Attachment ID'),
+      id: z.string().guid().describe('Attachment ID'),
       file_url: z.string().max(2000).optional().describe('File URL / storage path'),
       file_name: z.string().max(500).optional().describe('File name'),
       file_size: z.number().min(0).optional().describe('File size in bytes'),
       file_type: z.string().max(200).optional().describe('MIME type'),
       uploaded_by: z.string().max(200).optional().describe('Uploader user ID'),
       description: z.string().optional().describe('Description'),
-      work_order_id: z.string().uuid().optional().describe('Work order ID'),
-      work_request_id: z.string().uuid().optional().describe('Work request ID'),
-      pm_schedule_id: z.string().uuid().optional().describe('PM schedule ID'),
-      pm_template_id: z.string().uuid().optional().describe('PM template ID'),
+      work_order_id: z.string().guid().optional().describe('Work order ID'),
+      work_request_id: z.string().guid().optional().describe('Work request ID'),
+      pm_schedule_id: z.string().guid().optional().describe('PM schedule ID'),
+      pm_template_id: z.string().guid().optional().describe('PM template ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -4556,7 +4562,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_attachment',
     'Delete an attachment by ID. Requires attachments:write scope.',
-    { id: z.string().uuid().describe('Attachment ID') },
+    { id: z.string().guid().describe('Attachment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('attachments', id)
@@ -4575,7 +4581,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_document',
     'Create a project document record. Requires project_documents:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       name: z.string().min(1).max(500).describe('Document name (required)'),
       file_path: z
         .string()
@@ -4583,7 +4589,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .max(2000)
         .describe('Storage path from upload URL response (required)'),
       uploaded_by: z.string().min(1).max(200).describe('Uploader user ID (required)'),
-      folder_id: z.string().uuid().optional().describe('Folder ID'),
+      folder_id: z.string().guid().optional().describe('Folder ID'),
       description: z.string().optional().describe('Description'),
       file_size: z.number().min(0).optional().describe('File size in bytes'),
       file_type: z.string().max(200).optional().describe('MIME type'),
@@ -4602,12 +4608,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_document',
     'Update a project document by ID. Requires project_documents:write scope.',
     {
-      id: z.string().uuid().describe('Project document ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project document ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       name: z.string().min(1).max(500).optional().describe('Document name'),
       file_path: z.string().max(2000).optional().describe('Storage path'),
       uploaded_by: z.string().max(200).optional().describe('Uploader user ID'),
-      folder_id: z.string().uuid().optional().describe('Folder ID'),
+      folder_id: z.string().guid().optional().describe('Folder ID'),
       description: z.string().optional().describe('Description'),
       file_size: z.number().min(0).optional().describe('File size in bytes'),
       file_type: z.string().max(200).optional().describe('MIME type'),
@@ -4625,7 +4631,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_document',
     'Delete a project document by ID. Requires project_documents:write scope.',
-    { id: z.string().uuid().describe('Project document ID') },
+    { id: z.string().guid().describe('Project document ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-documents', id)
@@ -4644,7 +4650,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_contract_document',
     'Create a contract document record. Requires contract_documents:write scope.',
     {
-      contract_id: z.string().uuid().describe('Contract ID (required)'),
+      contract_id: z.string().guid().describe('Contract ID (required)'),
       file_name: z.string().min(1).max(500).describe('File name (required)'),
       file_path: z
         .string()
@@ -4669,8 +4675,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_contract_document',
     'Update a contract document by ID. Requires contract_documents:write scope.',
     {
-      id: z.string().uuid().describe('Contract document ID'),
-      contract_id: z.string().uuid().optional().describe('Contract ID'),
+      id: z.string().guid().describe('Contract document ID'),
+      contract_id: z.string().guid().optional().describe('Contract ID'),
       file_name: z.string().max(500).optional().describe('File name'),
       file_path: z.string().max(2000).optional().describe('Storage path'),
       file_size: z.number().min(0).optional().describe('File size in bytes'),
@@ -4690,7 +4696,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_contract_document',
     'Delete a contract document by ID. Requires contract_documents:write scope.',
-    { id: z.string().uuid().describe('Contract document ID') },
+    { id: z.string().guid().describe('Contract document ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('contract-documents', id)
@@ -4709,7 +4715,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_team_member',
     'Add a team member to a project. Requires project_team_members:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       user_id: z.string().min(1).max(200).describe('Clerk user ID (required)'),
       role: z.string().min(1).max(100).describe('Role on the project (required)'),
       responsibilities: z.string().optional().describe('Description of responsibilities'),
@@ -4731,8 +4737,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_team_member',
     'Update a project team member by ID. Requires project_team_members:write scope.',
     {
-      id: z.string().uuid().describe('Project team member ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project team member ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       user_id: z.string().min(1).max(200).optional().describe('Clerk user ID'),
       role: z.string().min(1).max(100).optional().describe('Role on the project'),
       responsibilities: z.string().optional().describe('Description of responsibilities'),
@@ -4753,7 +4759,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_team_member',
     'Remove a team member from a project by ID. Requires project_team_members:write scope.',
-    { id: z.string().uuid().describe('Project team member ID') },
+    { id: z.string().guid().describe('Project team member ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-team-members', id)
@@ -4772,8 +4778,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_task_dependency',
     'Create a dependency between two project tasks. Requires project_task_dependencies:write scope.',
     {
-      task_id: z.string().uuid().describe('Task ID (the dependent task, required)'),
-      depends_on_task_id: z.string().uuid().describe('Task ID that must complete first (required)'),
+      task_id: z.string().guid().describe('Task ID (the dependent task, required)'),
+      depends_on_task_id: z.string().guid().describe('Task ID that must complete first (required)'),
       dependency_type: z
         .enum(['finish_to_start', 'start_to_start', 'finish_to_finish', 'start_to_finish'])
         .optional()
@@ -4792,7 +4798,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_task_dependency',
     'Delete a task dependency by ID. Requires project_task_dependencies:write scope.',
-    { id: z.string().uuid().describe('Project task dependency ID') },
+    { id: z.string().guid().describe('Project task dependency ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-task-dependencies', id)
@@ -4811,7 +4817,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_update',
     'Create a periodic project status update. Requires project_updates:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       author_id: z.string().min(1).max(200).describe('Author Clerk user ID (required)'),
       timeframe: z
         .enum(['monthly', 'quarterly', 'bi-annually', 'annually'])
@@ -4844,8 +4850,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_update',
     'Update an existing project update by ID. Requires project_updates:write scope.',
     {
-      id: z.string().uuid().describe('Project update ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project update ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       author_id: z.string().min(1).max(200).optional().describe('Author Clerk user ID'),
       timeframe: z
         .enum(['monthly', 'quarterly', 'bi-annually', 'annually'])
@@ -4875,7 +4881,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_update',
     'Delete a project update by ID. Requires project_updates:write scope.',
-    { id: z.string().uuid().describe('Project update ID') },
+    { id: z.string().guid().describe('Project update ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-updates', id)
@@ -4894,7 +4900,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_cost_snapshot',
     'Record a cost snapshot for a project at a point in time. Requires project_cost_snapshots:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       snapshot_date: z.string().describe('Snapshot date (ISO 8601, required)'),
       total_budget: z.number().min(0).describe('Total budget amount (required)'),
       actual_cost: z.number().min(0).describe('Actual cost to date (required)'),
@@ -4919,7 +4925,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_cost_snapshot',
     'Delete a project cost snapshot by ID. Requires project_cost_snapshots:write scope.',
-    { id: z.string().uuid().describe('Project cost snapshot ID') },
+    { id: z.string().guid().describe('Project cost snapshot ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-cost-snapshots', id)
@@ -4938,8 +4944,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_location',
     'Link a location to a project. Requires project_locations:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      location_id: z.string().uuid().describe('Location ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      location_id: z.string().guid().describe('Location ID (required)'),
     },
     async params => {
       try {
@@ -4954,7 +4960,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_location',
     'Remove a location from a project by ID. Requires project_locations:write scope.',
-    { id: z.string().uuid().describe('Project location ID') },
+    { id: z.string().guid().describe('Project location ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-locations', id)
@@ -4973,8 +4979,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_site',
     'Link a site to a project. Requires project_sites:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      site_id: z.string().uuid().describe('Site ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      site_id: z.string().guid().describe('Site ID (required)'),
     },
     async params => {
       try {
@@ -4989,7 +4995,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_site',
     'Remove a site from a project by ID. Requires project_sites:write scope.',
-    { id: z.string().uuid().describe('Project site ID') },
+    { id: z.string().guid().describe('Project site ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-sites', id)
@@ -5008,8 +5014,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_building',
     'Link a building to a project. Requires project_buildings:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      building_id: z.string().uuid().describe('Building ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      building_id: z.string().guid().describe('Building ID (required)'),
     },
     async params => {
       try {
@@ -5024,7 +5030,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_building',
     'Remove a building from a project by ID. Requires project_buildings:write scope.',
-    { id: z.string().uuid().describe('Project building ID') },
+    { id: z.string().guid().describe('Project building ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-buildings', id)
@@ -5043,8 +5049,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_system',
     'Link a system to a project. Requires project_systems:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      system_id: z.string().uuid().describe('System ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      system_id: z.string().guid().describe('System ID (required)'),
     },
     async params => {
       try {
@@ -5059,7 +5065,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_system',
     'Remove a system from a project by ID. Requires project_systems:write scope.',
-    { id: z.string().uuid().describe('Project system ID') },
+    { id: z.string().guid().describe('Project system ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-systems', id)
@@ -5078,8 +5084,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_system_class',
     'Link a system class to a project. Requires project_system_classes:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      system_class_id: z.string().uuid().describe('System class ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      system_class_id: z.string().guid().describe('System class ID (required)'),
     },
     async params => {
       try {
@@ -5094,7 +5100,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_system_class',
     'Remove a system class from a project by ID. Requires project_system_classes:write scope.',
-    { id: z.string().uuid().describe('Project system class ID') },
+    { id: z.string().guid().describe('Project system class ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-system-classes', id)
@@ -5113,8 +5119,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_system_group',
     'Link a system group to a project. Requires project_system_groups:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      system_group_id: z.string().uuid().describe('System group ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      system_group_id: z.string().guid().describe('System group ID (required)'),
     },
     async params => {
       try {
@@ -5129,7 +5135,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_system_group',
     'Remove a system group from a project by ID. Requires project_system_groups:write scope.',
-    { id: z.string().uuid().describe('Project system group ID') },
+    { id: z.string().guid().describe('Project system group ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-system-groups', id)
@@ -5148,7 +5154,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_risk',
     'Create a new project risk. Requires project_risks:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
       title: z.string().min(1).max(500).describe('Risk title (required)'),
       description: z.string().optional().describe('Risk description'),
       category: z
@@ -5181,8 +5187,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_risk',
     'Update an existing project risk by ID. Requires project_risks:write scope.',
     {
-      id: z.string().uuid().describe('Project risk ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
+      id: z.string().guid().describe('Project risk ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
       title: z.string().min(1).max(500).optional().describe('Risk title'),
       description: z.string().optional().describe('Risk description'),
       category: z
@@ -5213,7 +5219,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_risk',
     'Delete a project risk by ID. Requires project_risks:write scope.',
-    { id: z.string().uuid().describe('Project risk ID') },
+    { id: z.string().guid().describe('Project risk ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-risks', id)
@@ -5232,8 +5238,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_asset',
     'Link an asset to a project. Requires project_assets:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      asset_id: z.string().uuid().describe('Asset ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      asset_id: z.string().guid().describe('Asset ID (required)'),
     },
     async params => {
       try {
@@ -5248,7 +5254,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_asset',
     'Remove an asset from a project by ID. Requires project_assets:write scope.',
-    { id: z.string().uuid().describe('Project asset ID') },
+    { id: z.string().guid().describe('Project asset ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-assets', id)
@@ -5291,7 +5297,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_service_area',
     'Update an existing service area by ID. Requires service_areas:write scope.',
     {
-      id: z.string().uuid().describe('Service area ID'),
+      id: z.string().guid().describe('Service area ID'),
       name: z.string().min(1).max(500).optional().describe('Service area name'),
       description: z.string().max(2000).optional().describe('Description'),
       icon: z.string().max(200).optional().describe('Icon name'),
@@ -5312,7 +5318,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_service_area',
     'Delete a service area by ID. WARNING: This also deletes all linked measures, measurements, and junction records. Requires service_areas:write scope.',
-    { id: z.string().uuid().describe('Service area ID') },
+    { id: z.string().guid().describe('Service area ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('service-areas', id)
@@ -5331,8 +5337,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_service_area_system_class',
     'Link a system class to a service area. Requires service_areas:write scope. Resolve IDs first: list_service_areas → service_area_id, list_system_classes → system_class_id.',
     {
-      service_area_id: z.string().uuid().describe('Service area ID (required)'),
-      system_class_id: z.string().uuid().describe('System class ID (required)'),
+      service_area_id: z.string().guid().describe('Service area ID (required)'),
+      system_class_id: z.string().guid().describe('System class ID (required)'),
     },
     async params => {
       try {
@@ -5347,7 +5353,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_service_area_system_class',
     'Remove a system class link from a service area. Requires service_areas:write scope.',
-    { id: z.string().uuid().describe('Service area system class link ID') },
+    { id: z.string().guid().describe('Service area system class link ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('service-area-system-classes', id)
@@ -5366,8 +5372,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_service_area_site',
     'Link a site to a service area (optional scoping). Requires service_areas:write scope. Resolve IDs first: list_service_areas → service_area_id, list_sites → site_id.',
     {
-      service_area_id: z.string().uuid().describe('Service area ID (required)'),
-      site_id: z.string().uuid().describe('Site ID (required)'),
+      service_area_id: z.string().guid().describe('Service area ID (required)'),
+      site_id: z.string().guid().describe('Site ID (required)'),
     },
     async params => {
       try {
@@ -5382,7 +5388,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_service_area_site',
     'Remove a site link from a service area. Requires service_areas:write scope.',
-    { id: z.string().uuid().describe('Service area site link ID') },
+    { id: z.string().guid().describe('Service area site link ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('service-area-sites', id)
@@ -5401,7 +5407,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_los_measure',
     'Create a new LoS measure within a service area. Requires los_measures:write scope. Resolve service_area_id first via list_service_areas.',
     {
-      service_area_id: z.string().uuid().describe('Service area ID (required)'),
+      service_area_id: z.string().guid().describe('Service area ID (required)'),
       name: z.string().min(1).max(500).describe('Measure name (required, unique per service area)'),
       category: z
         .enum([
@@ -5460,7 +5466,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Weight for composite score calculation (default: 1.0)'),
       data_source_config: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .optional()
         .describe(
           'Data source configuration (JSONB). E.g., {"threshold": 3} for pct_above/below, {"days_back": 90} for WO metrics.'
@@ -5482,7 +5488,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_los_measure',
     'Update an existing LoS measure by ID. Requires los_measures:write scope.',
     {
-      id: z.string().uuid().describe('LoS measure ID'),
+      id: z.string().guid().describe('LoS measure ID'),
       name: z.string().min(1).max(500).optional().describe('Measure name'),
       category: z
         .enum([
@@ -5531,7 +5537,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       stretch_goal: z.number().optional().describe('Stretch goal value'),
       weight: z.number().min(0).optional().describe('Weight for composite score calculation'),
       data_source_config: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .optional()
         .describe('Data source configuration (JSONB)'),
       is_active: z.boolean().optional().describe('Active status'),
@@ -5550,7 +5556,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_los_measure',
     'Delete a LoS measure by ID. WARNING: This also deletes all associated measurements and targets history. Requires los_measures:write scope.',
-    { id: z.string().uuid().describe('LoS measure ID') },
+    { id: z.string().guid().describe('LoS measure ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('los-measures', id)
@@ -5569,7 +5575,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_los_measurement',
     'Record a new LoS measurement value. Requires los_measurements:write scope. Resolve los_measure_id first via list_los_measures.',
     {
-      los_measure_id: z.string().uuid().describe('LoS measure ID (required)'),
+      los_measure_id: z.string().guid().describe('LoS measure ID (required)'),
       period_type: z
         .enum(['monthly', 'quarterly', 'semi_annual', 'annual'])
         .describe('Period type (required)'),
@@ -5598,7 +5604,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_los_measurement',
     'Update an existing LoS measurement by ID. Requires los_measurements:write scope.',
     {
-      id: z.string().uuid().describe('LoS measurement ID'),
+      id: z.string().guid().describe('LoS measurement ID'),
       actual_value: z.number().optional().describe('Measured value'),
       notes: z.string().max(2000).optional().describe('Notes or context'),
       period_type: z
@@ -5622,7 +5628,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_los_measurement',
     'Delete a LoS measurement by ID. Requires los_measurements:write scope.',
-    { id: z.string().uuid().describe('LoS measurement ID') },
+    { id: z.string().guid().describe('LoS measurement ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('los-measurements', id)
@@ -5641,7 +5647,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_los_proposed_target',
     'Record the proposed level of service for a LoS measure in one future year (O. Reg. 588/17 s. 6(1)). One row per measure and year; a duplicate returns 409, so update the existing row instead. Use target_statement for a community measure and target_value for a technical one. Requires los_proposed_targets:write scope. Resolve los_measure_id first via list_los_measures.',
     {
-      los_measure_id: z.string().uuid().describe('LoS measure ID (required)'),
+      los_measure_id: z.string().guid().describe('LoS measure ID (required)'),
       year: z.number().int().min(2000).max(2200).describe('Target year, 2000-2200 (required)'),
       target_value: z
         .number()
@@ -5667,7 +5673,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_los_proposed_target',
     'Update an existing LoS proposed target by ID. Requires los_proposed_targets:write scope.',
     {
-      id: z.string().uuid().describe('LoS proposed target ID'),
+      id: z.string().guid().describe('LoS proposed target ID'),
       year: z.number().int().min(2000).max(2200).optional().describe('Target year, 2000-2200'),
       target_value: z
         .number()
@@ -5692,7 +5698,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_los_proposed_target',
     'Delete a LoS proposed target by ID. Requires los_proposed_targets:write scope.',
-    { id: z.string().uuid().describe('LoS proposed target ID') },
+    { id: z.string().guid().describe('LoS proposed target ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('los-proposed-targets', id)
@@ -5731,7 +5737,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       system_id: z
         .string()
-        .uuid()
+        .guid()
         .describe('System ID (required) - resolve first via list_systems'),
       metric: z.enum(LOS_TARGET_METRICS).describe('Metric the target tracks (required)'),
       base_target: z
@@ -5755,10 +5761,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_system_los_target',
     'Update a system LoS target by ID. base_target must sit on the scale of the metric in force (0-100, or 0-25 for risk_score_avg), so send a new base_target when changing to a metric with a smaller scale. Direction follows the metric automatically. Requires los_targets:write scope.',
     {
-      id: z.string().uuid().describe('System LoS target ID'),
+      id: z.string().guid().describe('System LoS target ID'),
       system_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('System ID - resolve first via list_systems'),
       metric: z.enum(LOS_TARGET_METRICS).optional().describe('Metric the target tracks'),
@@ -5783,7 +5789,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_system_los_target',
     'Delete a system LoS target by ID. Buildings stop being scored on that system and metric; past status snapshots are kept. Requires los_targets:write scope.',
-    { id: z.string().uuid().describe('System LoS target ID') },
+    { id: z.string().guid().describe('System LoS target ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('system-los-targets', id)
@@ -5826,7 +5832,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_los_target',
     'Update an infrastructure LoS target by ID. base_target stays on 0-100. Requires los_targets:write scope.',
     {
-      id: z.string().uuid().describe('Infrastructure LoS target ID'),
+      id: z.string().guid().describe('Infrastructure LoS target ID'),
       feature_class: z
         .string()
         .regex(/^[a-z][a-z0-9_]{0,49}$/)
@@ -5854,7 +5860,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_los_target',
     'Delete an infrastructure LoS target by ID. Networks of that class stop being scored on the metric; past status snapshots are kept. Requires los_targets:write scope.',
-    { id: z.string().uuid().describe('Infrastructure LoS target ID') },
+    { id: z.string().guid().describe('Infrastructure LoS target ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-los-targets', id)
@@ -5890,7 +5896,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_criticality_modifier',
     'Update a criticality modifier override by ID. Below 1 tightens the targets of facilities in that tier, above 1 relaxes them. Requires los_targets:write scope.',
     {
-      id: z.string().uuid().describe('Criticality modifier ID'),
+      id: z.string().guid().describe('Criticality modifier ID'),
       criticality: z.enum(FACILITY_CRITICALITIES).optional().describe('Criticality tier'),
       modifier: z
         .number()
@@ -5912,7 +5918,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_criticality_modifier',
     'Delete a criticality modifier override by ID, which restores the built-in default for that tier (critical 0.6, high 0.8, medium 1.0, low 1.4). Requires los_targets:write scope.',
-    { id: z.string().uuid().describe('Criticality modifier ID') },
+    { id: z.string().guid().describe('Criticality modifier ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('criticality-modifiers', id)
@@ -5977,7 +5983,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_los_consequence',
     'Update a LoS consequence by ID. Changing scope_type to global clears scope_ref; changing it to anything else needs a scope_ref that fits the new type. Advisory only: no notification is sent. Requires los_consequences:write scope.',
     {
-      id: z.string().uuid().describe('LoS consequence ID'),
+      id: z.string().guid().describe('LoS consequence ID'),
       scope_type: z
         .enum(LOS_CONSEQUENCE_SCOPE_TYPES)
         .optional()
@@ -6009,7 +6015,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_los_consequence',
     'Delete a LoS consequence by ID. Requires los_consequences:write scope.',
-    { id: z.string().uuid().describe('LoS consequence ID') },
+    { id: z.string().guid().describe('LoS consequence ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('los-consequences', id)
@@ -6039,12 +6045,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Building this floor belongs to (omit if site-scoped)'),
       site_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'Site this plan belongs to (use for site-level / campus plans; omit if building-scoped)'
@@ -6096,7 +6102,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_floorplan',
     'Update floorplan metadata (rename floor, reorder, set status). Requires floorplans:write scope.',
     {
-      id: z.string().uuid().describe('Floorplan ID'),
+      id: z.string().guid().describe('Floorplan ID'),
       floor_label: z.string().max(200).optional().describe('New floor label'),
       floor_order: z.number().int().min(0).optional().describe('New sort order'),
       status: z.enum(FLOORPLAN_STATUSES).optional().describe('Detection status'),
@@ -6115,7 +6121,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_floorplan',
     'Delete a floorplan. WARNING: cascades to all regions and asset placements on this floor. Does NOT delete the underlying PDF file from storage (do that separately if no other floors reference it). Requires floorplans:write scope.',
-    { id: z.string().uuid().describe('Floorplan ID') },
+    { id: z.string().guid().describe('Floorplan ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('floorplans', id)
@@ -6130,12 +6136,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_floorplan_region',
     'Create a region (labeled room or zone) on a floorplan. Polygon coordinates are normalized 0-1 with origin top-left. Optionally link the region to an existing Location via location_id. Requires floorplan_regions:write scope.',
     {
-      floorplan_id: z.string().uuid().describe('Floorplan this region belongs to'),
+      floorplan_id: z.string().guid().describe('Floorplan this region belongs to'),
       label: z.string().max(500).describe('Region label (e.g. "Boiler Room 2B")'),
       polygon: polygonSchema,
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Linked Location ID (resolved via list_locations)'),
       source: z
@@ -6169,12 +6175,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_floorplan_region',
     'Update a floorplan region - rename, reshape polygon, link to a Location, or mark as reviewed. Requires floorplan_regions:write scope.',
     {
-      id: z.string().uuid().describe('Floorplan region ID'),
+      id: z.string().guid().describe('Floorplan region ID'),
       label: z.string().max(500).optional().describe('New label'),
       polygon: polygonSchema.optional(),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Linked Location ID (set to null to unlink)'),
       confidence: z.number().min(0).max(1).optional(),
@@ -6193,7 +6199,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_floorplan_region',
     'Delete a region. Asset placements that referenced this region will have region_id set to null but remain on the floorplan. Requires floorplan_regions:write scope.',
-    { id: z.string().uuid().describe('Floorplan region ID') },
+    { id: z.string().guid().describe('Floorplan region ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('floorplan-regions', id)
@@ -6208,13 +6214,13 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_asset_placement',
     'Place an asset on a floorplan at the given (x, y) coordinate (normalized 0-1, origin top-left). UPSERTS by asset_id - an asset can have at most ONE placement globally, so calling this again just moves the pin. Use bulk_create with resource="asset-placements" to place many assets at once. Requires asset_placements:write scope.',
     {
-      asset_id: z.string().uuid().describe('Asset to place (resolve via list_assets)'),
-      floorplan_id: z.string().uuid().describe('Target floorplan (resolve via list_floorplans)'),
+      asset_id: z.string().guid().describe('Asset to place (resolve via list_assets)'),
+      floorplan_id: z.string().guid().describe('Target floorplan (resolve via list_floorplans)'),
       x: z.number().min(0).max(1).describe('Normalized x coordinate (0=left, 1=right)'),
       y: z.number().min(0).max(1).describe('Normalized y coordinate (0=top, 1=bottom)'),
       region_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Optional region the pin sits inside (usually auto-inferred)'),
       source: z
@@ -6236,11 +6242,11 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_placement',
     'Move an asset placement to new coordinates or a different floorplan. Requires asset_placements:write scope.',
     {
-      id: z.string().uuid().describe('Asset placement ID'),
+      id: z.string().guid().describe('Asset placement ID'),
       x: z.number().min(0).max(1).optional().describe('New x coordinate'),
       y: z.number().min(0).max(1).optional().describe('New y coordinate'),
-      region_id: z.string().uuid().optional().describe('New region (set to null to clear)'),
-      floorplan_id: z.string().uuid().optional().describe('Move to a different floorplan'),
+      region_id: z.string().guid().optional().describe('New region (set to null to clear)'),
+      floorplan_id: z.string().guid().optional().describe('Move to a different floorplan'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -6255,7 +6261,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_placement',
     'Remove an asset placement. The asset itself is not affected - only the pin on the floorplan is removed. Requires asset_placements:write scope.',
-    { id: z.string().uuid().describe('Asset placement ID') },
+    { id: z.string().guid().describe('Asset placement ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-placements', id)
@@ -6350,7 +6356,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       resource: z.enum(BULK_RESOURCES).describe('Resource type (e.g. "assets", "work-orders")'),
       items: z
-        .array(z.record(z.unknown()))
+        .array(z.record(z.string(), z.unknown()))
         .min(1)
         .max(100)
         .describe(
@@ -6395,7 +6401,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_status',
     'Update an existing asset status by ID. Requires asset_statuses:write scope.',
     {
-      id: z.string().uuid().describe('Asset status ID'),
+      id: z.string().guid().describe('Asset status ID'),
       name: z.string().max(500).optional().describe('Status name'),
       description: z.string().optional().describe('Description'),
       module: WORKSPACE.optional().describe(
@@ -6415,7 +6421,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_status',
     'Delete an asset status by ID. Requires asset_statuses:write scope.',
-    { id: z.string().uuid().describe('Asset status ID') },
+    { id: z.string().guid().describe('Asset status ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-statuses', id)
@@ -6444,7 +6450,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Compliance period in months'),
       status: z.enum(['active', 'archived']).optional().describe('Status'),
-      system_id: z.string().uuid().optional().describe('Associated system ID'),
+      system_id: z.string().guid().optional().describe('Associated system ID'),
     },
     async params => {
       try {
@@ -6460,7 +6466,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_compliance_item',
     'Update an existing compliance item by ID. Requires compliance:write scope.',
     {
-      id: z.string().uuid().describe('Compliance item ID'),
+      id: z.string().guid().describe('Compliance item ID'),
       name: z.string().max(500).optional().describe('Compliance item name'),
       description: z.string().optional().describe('Description'),
       regulation_reference: z.string().max(500).optional().describe('Regulation or code reference'),
@@ -6471,7 +6477,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
         .optional()
         .describe('Compliance period in months'),
       status: z.enum(['active', 'archived']).optional().describe('Status'),
-      system_id: z.string().uuid().optional().describe('Associated system ID'),
+      system_id: z.string().guid().optional().describe('Associated system ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -6486,7 +6492,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_compliance_item',
     'Delete a compliance item by ID. Requires compliance:write scope.',
-    { id: z.string().uuid().describe('Compliance item ID') },
+    { id: z.string().guid().describe('Compliance item ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('compliance', id)
@@ -6505,9 +6511,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_compliance_record',
     'Create a new compliance record (audit trail entry). Requires compliance_records:write scope.',
     {
-      compliance_item_id: z.string().uuid().describe('Compliance item ID (required)'),
-      pm_schedule_id: z.string().uuid().describe('PM schedule ID (required)'),
-      work_order_id: z.string().uuid().describe('Work order ID (required)'),
+      compliance_item_id: z.string().guid().describe('Compliance item ID (required)'),
+      pm_schedule_id: z.string().guid().describe('PM schedule ID (required)'),
+      work_order_id: z.string().guid().describe('Work order ID (required)'),
       completed_at: z.string().describe('Completion date-time (ISO 8601, required)'),
       completed_by: z.string().max(200).optional().describe('User ID who completed'),
       required_frequency_days: z
@@ -6536,7 +6542,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_compliance_record',
     'Update an existing compliance record by ID. Requires compliance_records:write scope.',
     {
-      id: z.string().uuid().describe('Compliance record ID'),
+      id: z.string().guid().describe('Compliance record ID'),
       completed_at: z.string().optional().describe('Completion date-time (ISO 8601)'),
       completed_by: z.string().max(200).optional().describe('User ID who completed'),
       required_frequency_days: z
@@ -6565,7 +6571,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_compliance_record',
     'Delete a compliance record by ID. Requires compliance_records:write scope.',
-    { id: z.string().uuid().describe('Compliance record ID') },
+    { id: z.string().guid().describe('Compliance record ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('compliance-records', id)
@@ -6580,8 +6586,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_compliance_pm_schedule',
     'Link a PM schedule to a compliance item, so completing the schedule keeps the item compliant. Requires compliance:write scope. Required: compliance_item_id, pm_schedule_id, required_frequency_days. Resolve both ids first with list_compliance_items and list_pm_schedules.',
     {
-      compliance_item_id: z.string().uuid().describe('Compliance item ID (required)'),
-      pm_schedule_id: z.string().uuid().describe('PM schedule ID (required)'),
+      compliance_item_id: z.string().guid().describe('Compliance item ID (required)'),
+      pm_schedule_id: z.string().guid().describe('PM schedule ID (required)'),
       required_frequency_days: z
         .number()
         .int()
@@ -6609,7 +6615,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_compliance_pm_schedule',
     'Change the required frequency or weight of a compliance item to PM schedule link. Requires compliance:write scope. To point a link at a different item or schedule, delete it and create a new one.',
     {
-      id: z.string().uuid().describe('Link ID - resolve via list_compliance_pm_schedules'),
+      id: z.string().guid().describe('Link ID - resolve via list_compliance_pm_schedules'),
       required_frequency_days: z
         .number()
         .int()
@@ -6631,7 +6637,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_compliance_pm_schedule',
     'Unlink a PM schedule from a compliance item. The schedule and the item both stay. Requires compliance:write scope.',
-    { id: z.string().uuid().describe('Link ID - resolve via list_compliance_pm_schedules') },
+    { id: z.string().guid().describe('Link ID - resolve via list_compliance_pm_schedules') },
     async ({ id }) => {
       try {
         const result = await client.remove('compliance-pm-schedules', id)
@@ -6823,7 +6829,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       ),
     work_generation_category_id: z
       .string()
-      .uuid()
+      .guid()
       .optional()
       .describe(
         'Work category for generated work orders - resolve with list_work_categories. Ignored unless work_generation is work_order.'
@@ -6858,7 +6864,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_lifecycle_event',
     'Update a lifecycle strategy event by ID. Editing re-confirms the cost (cost_reviewed_on is server-set). Set is_active false to disable an event without deleting it - projections recompute immediately. Requires infrastructure_lifecycle_events:write scope.',
     {
-      id: z.string().uuid().describe('Lifecycle event ID'),
+      id: z.string().guid().describe('Lifecycle event ID'),
       name: z.string().max(200).optional().describe('Event name'),
       is_active: z.boolean().optional().describe('Disable/enable the event'),
       event_class: lifecycleEventFields.event_class.optional(),
@@ -6891,7 +6897,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_lifecycle_event',
     'Delete a lifecycle strategy event by ID. Projections recompute immediately; consider update with is_active=false to disable instead. Requires infrastructure_lifecycle_events:write scope.',
-    { id: z.string().uuid().describe('Lifecycle event ID') },
+    { id: z.string().guid().describe('Lifecycle event ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-lifecycle-events', id)
@@ -6922,7 +6928,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       ),
       description: z.string().optional().describe('Description'),
       color_scheme: z.string().max(50).optional().describe('Display color scheme'),
-      metadata: z.record(z.unknown()).optional().describe('Free-form JSON metadata'),
+      metadata: z.record(z.string(), z.unknown()).optional().describe('Free-form JSON metadata'),
       criticality: NETWORK_CRITICALITY.optional(),
     },
     async params => {
@@ -6939,13 +6945,16 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_network',
     'Update an existing infrastructure network by ID. Requires infrastructure_networks:write scope.',
     {
-      id: z.string().uuid().describe('Infrastructure network ID'),
+      id: z.string().guid().describe('Infrastructure network ID'),
       name: z.string().max(200).optional().describe('Network name'),
       feature_class: featureClassCode.optional().describe('Asset class code'),
       description: z.string().optional().describe('Description'),
       color_scheme: z.string().max(50).optional().describe('Display color scheme'),
-      metadata: z.record(z.unknown()).optional().describe('Free-form JSON metadata'),
-      criticality: NETWORK_CRITICALITY.nullable().optional(),
+      metadata: z.record(z.string(), z.unknown()).optional().describe('Free-form JSON metadata'),
+      // zod 4 keeps a description on the inner schema under .nullable(); restate it on the property.
+      criticality: NETWORK_CRITICALITY.nullable()
+        .optional()
+        .describe(NETWORK_CRITICALITY.description ?? ''),
     },
     async ({ id, ...rest }) => {
       try {
@@ -6960,7 +6969,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_network',
     'Delete an infrastructure network by ID. Cascades to all features in the network - confirm with the user before deleting. Requires infrastructure_networks:write scope.',
-    { id: z.string().uuid().describe('Infrastructure network ID') },
+    { id: z.string().guid().describe('Infrastructure network ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-networks', id)
@@ -6993,7 +7002,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_asset',
     'Create an infrastructure asset (feature - segment or node). Geometry must be GeoJSON Point (for nodes) or LineString (for segments) in EPSG:4326; coordinates are [longitude, latitude]. `length_m`, `slope_pct`, and `risk_score` are computed server-side. Requires infrastructure_assets:write scope.',
     {
-      network_id: z.string().uuid().describe('Infrastructure network ID (required)'),
+      network_id: z.string().guid().describe('Infrastructure network ID (required)'),
       feature_type: z.enum(FEATURE_TYPES).describe('"segment" (LineString) or "node" (Point)'),
       geometry: featureGeometry.describe(
         'GeoJSON geometry - Point for nodes, LineString for segments'
@@ -7007,24 +7016,27 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
           'Feature ID - human-readable asset identifier, unique per tenant (typically the source GIS asset id)'
         ),
       description: z.string().optional().describe('Description'),
-      external_ids: z.record(z.unknown()).optional().describe('Free-form external ID map'),
+      external_ids: z
+        .record(z.string(), z.unknown())
+        .optional()
+        .describe('Free-form external ID map'),
       from_street: z.string().max(200).optional().describe('From street (segments)'),
       to_street: z.string().max(200).optional().describe('To street (segments)'),
       image_url: z.string().optional().describe('Image URL'),
       qr_code: z.string().max(200).optional().describe('QR code'),
-      from_feature_id: z.string().uuid().optional().describe('From-node feature ID (segments)'),
-      to_feature_id: z.string().uuid().optional().describe('To-node feature ID (segments)'),
+      from_feature_id: z.string().guid().optional().describe('From-node feature ID (segments)'),
+      to_feature_id: z.string().guid().optional().describe('To-node feature ID (segments)'),
       flow_direction: z.enum(FLOW_DIRECTIONS).optional().describe('Flow direction'),
-      asset_type_id: z.string().uuid().optional().describe('Asset type ID'),
-      manufacturer_id: z.string().uuid().optional().describe('Manufacturer ID'),
-      system_class_id: z.string().uuid().optional().describe('System class ID'),
-      system_group_id: z.string().uuid().optional().describe('System group ID'),
-      system_id: z.string().uuid().optional().describe('System ID'),
+      asset_type_id: z.string().guid().optional().describe('Asset type ID'),
+      manufacturer_id: z.string().guid().optional().describe('Manufacturer ID'),
+      system_class_id: z.string().guid().optional().describe('System class ID'),
+      system_group_id: z.string().guid().optional().describe('System group ID'),
+      system_id: z.string().guid().optional().describe('System ID'),
       model: z.string().max(200).optional().describe('Model'),
       serial_number: z.string().max(200).optional().describe('Serial number'),
-      site_id: z.string().uuid().optional().describe('Site ID'),
-      building_id: z.string().uuid().optional().describe('Building ID'),
-      location_id: z.string().uuid().optional().describe('Location ID'),
+      site_id: z.string().guid().optional().describe('Site ID'),
+      building_id: z.string().guid().optional().describe('Building ID'),
+      location_id: z.string().guid().optional().describe('Location ID'),
       status_id: z.string().optional().describe('Asset status ID'),
       condition_score: z.number().min(0).max(100).optional().describe('Condition score (0-100)'),
       last_maintenance_date: z.string().optional().describe('Last maintenance date (YYYY-MM-DD)'),
@@ -7085,29 +7097,29 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_asset',
     'Update an existing infrastructure asset (feature) by ID. To change geometry, provide a new GeoJSON Point/LineString matching the existing feature_type. Computed columns (length_m, slope_pct, risk_score) cannot be set. Requires infrastructure_assets:write scope.',
     {
-      id: z.string().uuid().describe('Infrastructure asset ID'),
+      id: z.string().guid().describe('Infrastructure asset ID'),
       geometry: featureGeometry.optional().describe('Replacement GeoJSON geometry'),
       name: z.string().max(500).optional(),
       feature_code: z.string().max(100).optional(),
       description: z.string().optional(),
-      external_ids: z.record(z.unknown()).optional(),
+      external_ids: z.record(z.string(), z.unknown()).optional(),
       from_street: z.string().max(200).optional(),
       to_street: z.string().max(200).optional(),
       image_url: z.string().optional(),
       qr_code: z.string().max(200).optional(),
-      from_feature_id: z.string().uuid().optional(),
-      to_feature_id: z.string().uuid().optional(),
+      from_feature_id: z.string().guid().optional(),
+      to_feature_id: z.string().guid().optional(),
       flow_direction: z.enum(FLOW_DIRECTIONS).optional(),
-      asset_type_id: z.string().uuid().optional(),
-      manufacturer_id: z.string().uuid().optional(),
-      system_class_id: z.string().uuid().optional(),
-      system_group_id: z.string().uuid().optional(),
-      system_id: z.string().uuid().optional(),
+      asset_type_id: z.string().guid().optional(),
+      manufacturer_id: z.string().guid().optional(),
+      system_class_id: z.string().guid().optional(),
+      system_group_id: z.string().guid().optional(),
+      system_id: z.string().guid().optional(),
       model: z.string().max(200).optional(),
       serial_number: z.string().max(200).optional(),
-      site_id: z.string().uuid().optional(),
-      building_id: z.string().uuid().optional(),
-      location_id: z.string().uuid().optional(),
+      site_id: z.string().guid().optional(),
+      building_id: z.string().guid().optional(),
+      location_id: z.string().guid().optional(),
       status_id: z.string().optional(),
       condition_score: z.number().min(0).max(100).optional(),
       last_maintenance_date: z.string().optional(),
@@ -7163,7 +7175,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_asset',
     'Soft-delete an infrastructure asset (feature) by ID (sets deleted_at). Requires infrastructure_assets:write scope.',
-    { id: z.string().uuid().describe('Infrastructure asset ID') },
+    { id: z.string().guid().describe('Infrastructure asset ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-assets', id)
@@ -7182,12 +7194,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_asset_inspection',
     'Record an inspection against an infrastructure feature. Requires infrastructure_asset_inspections:write scope.',
     {
-      feature_id: z.string().uuid().describe('Infrastructure asset (feature) ID (required)'),
+      feature_id: z.string().guid().describe('Infrastructure asset (feature) ID (required)'),
       inspection_date: z.string().describe('Inspection date (YYYY-MM-DD, required)'),
       inspector_id: z.string().optional().describe('Inspector user ID'),
       method: z.string().max(100).optional().describe('Inspection method (e.g. CCTV, visual)'),
       condition_score: z.number().min(0).max(100).optional().describe('Condition score (0-100)'),
-      defects: z.record(z.unknown()).optional().describe('Defect observations (JSON)'),
+      defects: z.record(z.string(), z.unknown()).optional().describe('Defect observations (JSON)'),
       notes: z.string().optional().describe('Free-form notes'),
       attachments: z.array(z.string()).optional().describe('Attachment URLs/paths'),
     },
@@ -7205,12 +7217,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_asset_inspection',
     'Update an existing infrastructure asset inspection by ID. Requires infrastructure_asset_inspections:write scope.',
     {
-      id: z.string().uuid().describe('Inspection ID'),
+      id: z.string().guid().describe('Inspection ID'),
       inspection_date: z.string().optional().describe('Inspection date (YYYY-MM-DD)'),
       inspector_id: z.string().optional().describe('Inspector user ID'),
       method: z.string().max(100).optional().describe('Inspection method'),
       condition_score: z.number().min(0).max(100).optional().describe('Condition score'),
-      defects: z.record(z.unknown()).optional().describe('Defect observations'),
+      defects: z.record(z.string(), z.unknown()).optional().describe('Defect observations'),
       notes: z.string().optional().describe('Notes'),
       attachments: z.array(z.string()).optional().describe('Attachment URLs/paths'),
     },
@@ -7227,7 +7239,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_asset_inspection',
     'Soft-delete an infrastructure asset inspection by ID. Requires infrastructure_asset_inspections:write scope.',
-    { id: z.string().uuid().describe('Inspection ID') },
+    { id: z.string().guid().describe('Inspection ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-asset-inspections', id)
@@ -7311,7 +7323,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       ),
     work_generation_category_id: z
       .string()
-      .uuid()
+      .guid()
       .optional()
       .describe(
         'Work category for generated work orders - resolve with list_work_categories. Ignored unless work_generation is work_order.'
@@ -7331,12 +7343,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       name: z.string().max(200).describe('Event name (required, e.g. "Roof recoat")'),
       asset_type_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Asset type the strategy scope applies to (exactly one of the two scope ids)'),
       asset_type_group_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Asset type group the scope applies to (exactly one of the two scope ids)'),
       ...assetLifecycleEventFields,
@@ -7355,7 +7367,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_lifecycle_event',
     'Update a facility lifecycle strategy event by ID. Editing re-confirms the cost (cost_reviewed_on is server-set). Set is_active false to disable an event without deleting it - projections recompute immediately. Requires asset_lifecycle_events:write scope.',
     {
-      id: z.string().uuid().describe('Lifecycle event ID'),
+      id: z.string().guid().describe('Lifecycle event ID'),
       name: z.string().max(200).optional().describe('Event name'),
       is_active: z.boolean().optional().describe('Disable/enable the event'),
       event_class: assetLifecycleEventFields.event_class.optional(),
@@ -7386,7 +7398,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_lifecycle_event',
     'Delete a facility lifecycle strategy event by ID. Projections recompute immediately; consider update with is_active=false to disable instead. Requires asset_lifecycle_events:write scope.',
-    { id: z.string().uuid().describe('Lifecycle event ID') },
+    { id: z.string().guid().describe('Lifecycle event ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-lifecycle-events', id)
@@ -7405,7 +7417,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_asset_betterment',
     "Record capital work that ALREADY extended a facility asset's life - an elevator modernization, a boiler retube, a major component replacement. Required: asset_id, occurred_on, and at least one of capitalized_amount or added_life_years (work that adds neither changes nothing and is rejected). The asset's net book value and remaining life re-base from occurred_on, and its purchase_date is NEVER changed - if a user asks to change an in-service date to reflect an overhaul, record this instead and say why. Use asset_lifecycle_events for work expected in future; use a condition assessment for what someone observed. Call list_assets first to resolve asset_id. Requires asset_betterments:write scope.",
     {
-      asset_id: z.string().uuid().describe('Asset the capital work was performed on (required)'),
+      asset_id: z.string().guid().describe('Asset the capital work was performed on (required)'),
       occurred_on: z
         .string()
         .describe(
@@ -7429,14 +7441,14 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       description: z.string().max(2000).optional().describe('What was actually done'),
       asset_lifecycle_event_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('The lifecycle strategy event this executed, if any'),
-      work_order_id: z.string().uuid().optional().describe('The work order that delivered it'),
-      project_id: z.string().uuid().optional().describe('The project that delivered it'),
+      work_order_id: z.string().guid().optional().describe('The work order that delivered it'),
+      project_id: z.string().guid().optional().describe('The project that delivered it'),
       asset_cost_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('The asset cost row holding the spend, so the money is not double-entered'),
     },
@@ -7454,7 +7466,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_betterment',
     'Update a betterment by ID. The asset it belongs to cannot be changed - delete and re-create to move one. The row must still add either capital or life after the update. Requires asset_betterments:write scope.',
     {
-      id: z.string().uuid().describe('Betterment ID'),
+      id: z.string().guid().describe('Betterment ID'),
       occurred_on: z.string().optional().describe('Date the work went into service, YYYY-MM-DD'),
       capitalized_amount: z.number().min(0).optional().describe('Amount added to the asset value'),
       added_life_years: z
@@ -7478,7 +7490,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_betterment',
     "Delete a betterment by ID. The asset's net book value and remaining life revert to what they were without it. Requires asset_betterments:write scope.",
-    { id: z.string().uuid().describe('Betterment ID') },
+    { id: z.string().guid().describe('Betterment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-betterments', id)
@@ -7497,7 +7509,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_asset_condition_assessment',
     'Record a point-in-time condition assessment against an asset. Requires asset_condition_assessments:write scope. Call list_assets first to resolve asset_id.',
     {
-      asset_id: z.string().uuid().describe('Asset ID (required)'),
+      asset_id: z.string().guid().describe('Asset ID (required)'),
       assessed_on: z.string().describe('Assessment date (YYYY-MM-DD, required; today or earlier)'),
       condition_score: z
         .number()
@@ -7514,7 +7526,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       assessor_id: z.string().optional().describe('Assessor user ID'),
       method: z.enum(['visual', 'detailed', 'vendor']).optional().describe('Assessment method'),
       notes: z.string().optional().describe('Free-form notes'),
-      defects: z.record(z.unknown()).optional().describe('Structured defect findings (JSON)'),
+      defects: z
+        .record(z.string(), z.unknown())
+        .optional()
+        .describe('Structured defect findings (JSON)'),
       update_purchase_cost: z
         .boolean()
         .optional()
@@ -7536,7 +7551,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_asset_condition_assessment',
     'Update an existing asset condition assessment by ID. Requires asset_condition_assessments:write scope. Note: the purchase-cost writeback is create-only and cannot be triggered by an update.',
     {
-      id: z.string().uuid().describe('Assessment ID'),
+      id: z.string().guid().describe('Assessment ID'),
       assessed_on: z.string().optional().describe('Assessment date (YYYY-MM-DD, today or earlier)'),
       condition_score: z
         .number()
@@ -7549,7 +7564,10 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       assessor_id: z.string().optional().describe('Assessor user ID'),
       method: z.enum(['visual', 'detailed', 'vendor']).optional().describe('Assessment method'),
       notes: z.string().optional().describe('Free-form notes'),
-      defects: z.record(z.unknown()).optional().describe('Structured defect findings (JSON)'),
+      defects: z
+        .record(z.string(), z.unknown())
+        .optional()
+        .describe('Structured defect findings (JSON)'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -7564,7 +7582,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_asset_condition_assessment',
     'Soft-delete an asset condition assessment by ID. Requires asset_condition_assessments:write scope.',
-    { id: z.string().uuid().describe('Assessment ID') },
+    { id: z.string().guid().describe('Assessment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('asset-condition-assessments', id)
@@ -7592,7 +7610,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_asset_cost',
     'Record a cost against an infrastructure feature. work_order_number is derived server-side from work_order_id; do not set it. Requires infrastructure_asset_costs:write scope.',
     {
-      feature_id: z.string().uuid().describe('Infrastructure feature ID (required)'),
+      feature_id: z.string().guid().describe('Infrastructure feature ID (required)'),
       category: z.enum(INFRA_COST_CATEGORIES).describe('Cost category (required)'),
       amount: z.number().min(0).describe('Cost amount (required)'),
       cost_date: z.string().describe('Cost date (YYYY-MM-DD, required)'),
@@ -7600,12 +7618,12 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       po_number: z.string().max(200).optional().describe('PO number'),
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe(
           "Purchase order that paid this cost - resolve via list_purchase_orders. Counts against the order's remaining balance unless the cost belongs to a work order."
         ),
-      work_order_id: z.string().uuid().optional().describe('Linked work order ID'),
+      work_order_id: z.string().guid().optional().describe('Linked work order ID'),
     },
     async params => {
       try {
@@ -7621,7 +7639,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_asset_cost',
     'Update an infrastructure asset cost by ID. Requires infrastructure_asset_costs:write scope.',
     {
-      id: z.string().uuid().describe('Cost ID'),
+      id: z.string().guid().describe('Cost ID'),
       category: z.enum(INFRA_COST_CATEGORIES).optional().describe('Cost category'),
       amount: z.number().min(0).optional().describe('Cost amount'),
       cost_date: z.string().optional().describe('Cost date (YYYY-MM-DD)'),
@@ -7629,13 +7647,13 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
       po_number: z.string().max(200).optional().describe('PO number'),
       purchase_order_id: z
         .string()
-        .uuid()
+        .guid()
         .nullable()
         .optional()
         .describe(
           "Purchase order that paid this cost - resolve via list_purchase_orders. Counts against the order's remaining balance unless the cost belongs to a work order; null clears it."
         ),
-      work_order_id: z.string().uuid().optional().describe('Linked work order ID'),
+      work_order_id: z.string().guid().optional().describe('Linked work order ID'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -7650,7 +7668,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_asset_cost',
     'Delete an infrastructure asset cost by ID. Requires infrastructure_asset_costs:write scope.',
-    { id: z.string().uuid().describe('Cost ID') },
+    { id: z.string().guid().describe('Cost ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-asset-costs', id)
@@ -7669,8 +7687,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_asset_part',
     'Associate a part with an infrastructure feature. The (feature_id, part_id) pair must be unique - a duplicate returns 409. Requires infrastructure_asset_parts:write scope.',
     {
-      feature_id: z.string().uuid().describe('Infrastructure feature ID (required)'),
-      part_id: z.string().uuid().describe('Part ID (required; resolve via list_parts)'),
+      feature_id: z.string().guid().describe('Infrastructure feature ID (required)'),
+      part_id: z.string().guid().describe('Part ID (required; resolve via list_parts)'),
       quantity: z.number().min(0).optional().describe('Design/installed quantity (default 1)'),
     },
     async params => {
@@ -7687,9 +7705,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_asset_part',
     'Update an infrastructure asset part association by ID. Requires infrastructure_asset_parts:write scope.',
     {
-      id: z.string().uuid().describe('Association ID'),
-      feature_id: z.string().uuid().optional().describe('Infrastructure feature ID'),
-      part_id: z.string().uuid().optional().describe('Part ID'),
+      id: z.string().guid().describe('Association ID'),
+      feature_id: z.string().guid().optional().describe('Infrastructure feature ID'),
+      part_id: z.string().guid().optional().describe('Part ID'),
       quantity: z.number().min(0).optional().describe('Design/installed quantity'),
     },
     async ({ id, ...rest }) => {
@@ -7705,7 +7723,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_asset_part',
     'Delete an infrastructure asset part association by ID. Requires infrastructure_asset_parts:write scope.',
-    { id: z.string().uuid().describe('Association ID') },
+    { id: z.string().guid().describe('Association ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-asset-parts', id)
@@ -7724,7 +7742,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_asset_document',
     'Attach document metadata to an infrastructure feature. Upload the file bytes first via create_upload_url, then pass the returned file_path here. Requires infrastructure_asset_documents:write scope.',
     {
-      feature_id: z.string().uuid().describe('Infrastructure feature ID (required)'),
+      feature_id: z.string().guid().describe('Infrastructure feature ID (required)'),
       name: z.string().max(500).describe('Document name (required)'),
       file_path: z.string().max(2000).describe('Storage path from create_upload_url (required)'),
       description: z.string().optional().describe('Description'),
@@ -7746,7 +7764,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_asset_document',
     'Update infrastructure asset document metadata by ID. Requires infrastructure_asset_documents:write scope.',
     {
-      id: z.string().uuid().describe('Document ID'),
+      id: z.string().guid().describe('Document ID'),
       name: z.string().max(500).optional().describe('Document name'),
       file_path: z.string().max(2000).optional().describe('Storage path'),
       description: z.string().optional().describe('Description'),
@@ -7767,7 +7785,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_asset_document',
     'Delete an infrastructure asset document by ID. Requires infrastructure_asset_documents:write scope.',
-    { id: z.string().uuid().describe('Document ID') },
+    { id: z.string().guid().describe('Document ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-asset-documents', id)
@@ -7786,7 +7804,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_asset_comment',
     'Add a comment to an infrastructure feature. The author is attributed to the API key automatically; do not pass user_id. Requires infrastructure_asset_comments:write scope.',
     {
-      feature_id: z.string().uuid().describe('Infrastructure feature ID (required)'),
+      feature_id: z.string().guid().describe('Infrastructure feature ID (required)'),
       comment: z.string().max(10000).describe('Comment text (required)'),
     },
     async params => {
@@ -7803,7 +7821,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_asset_comment',
     'Update an infrastructure asset comment by ID. Requires infrastructure_asset_comments:write scope.',
     {
-      id: z.string().uuid().describe('Comment ID'),
+      id: z.string().guid().describe('Comment ID'),
       comment: z.string().max(10000).optional().describe('Comment text'),
     },
     async ({ id, ...rest }) => {
@@ -7819,7 +7837,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_asset_comment',
     'Delete an infrastructure asset comment by ID. Requires infrastructure_asset_comments:write scope.',
-    { id: z.string().uuid().describe('Comment ID') },
+    { id: z.string().guid().describe('Comment ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-asset-comments', id)
@@ -7861,7 +7879,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_infrastructure_zone',
     'Create an operational hydraulic boundary (pressure zone, DMA, sewershed, etc.). boundary is a GeoJSON Polygon, or a MultiPolygon when the area comes in separate pieces. (network_id, name) must be unique. Requires infrastructure_zones:write scope.',
     {
-      network_id: z.string().uuid().describe('Infrastructure network ID (required)'),
+      network_id: z.string().guid().describe('Infrastructure network ID (required)'),
       kind: z.enum(INFRA_ZONE_KINDS).describe('Zone kind (required)'),
       name: z.string().max(200).describe('Zone name (required)'),
       boundary: geoJsonBoundary,
@@ -7882,8 +7900,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_infrastructure_zone',
     'Update an infrastructure zone by ID. Pass boundary as a GeoJSON Polygon or MultiPolygon to replace the geometry. Requires infrastructure_zones:write scope.',
     {
-      id: z.string().uuid().describe('Zone ID'),
-      network_id: z.string().uuid().optional().describe('Infrastructure network ID'),
+      id: z.string().guid().describe('Zone ID'),
+      network_id: z.string().guid().optional().describe('Infrastructure network ID'),
       kind: z.enum(INFRA_ZONE_KINDS).optional().describe('Zone kind'),
       name: z.string().max(200).optional().describe('Zone name'),
       boundary: geoJsonBoundary.optional(),
@@ -7903,7 +7921,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_infrastructure_zone',
     'Delete an infrastructure zone by ID. Requires infrastructure_zones:write scope.',
-    { id: z.string().uuid().describe('Zone ID') },
+    { id: z.string().guid().describe('Zone ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('infrastructure-zones', id)
@@ -7922,8 +7940,8 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'create_project_infrastructure_asset',
     'Link a project to an infrastructure feature. The (project_id, feature_id) pair must be unique - a duplicate returns 409. Requires project_infrastructure_assets:write scope.',
     {
-      project_id: z.string().uuid().describe('Project ID (required)'),
-      feature_id: z.string().uuid().describe('Infrastructure feature ID (required)'),
+      project_id: z.string().guid().describe('Project ID (required)'),
+      feature_id: z.string().guid().describe('Infrastructure feature ID (required)'),
       notes: z.string().optional().describe('Free-form notes'),
     },
     async params => {
@@ -7940,9 +7958,9 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     'update_project_infrastructure_asset',
     'Update a project ↔ infrastructure feature link by ID. Requires project_infrastructure_assets:write scope.',
     {
-      id: z.string().uuid().describe('Link ID'),
-      project_id: z.string().uuid().optional().describe('Project ID'),
-      feature_id: z.string().uuid().optional().describe('Infrastructure feature ID'),
+      id: z.string().guid().describe('Link ID'),
+      project_id: z.string().guid().optional().describe('Project ID'),
+      feature_id: z.string().guid().optional().describe('Infrastructure feature ID'),
       notes: z.string().optional().describe('Free-form notes'),
     },
     async ({ id, ...rest }) => {
@@ -7958,7 +7976,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
   server.tool(
     'delete_project_infrastructure_asset',
     'Delete a project ↔ infrastructure feature link by ID. Requires project_infrastructure_assets:write scope.',
-    { id: z.string().uuid().describe('Link ID') },
+    { id: z.string().guid().describe('Link ID') },
     async ({ id }) => {
       try {
         const result = await client.remove('project-infrastructure-assets', id)
@@ -7979,7 +7997,7 @@ export function registerWriteTools(server: McpServer, client: AssetLabClient): v
     {
       resource: z.enum(BULK_RESOURCES).describe('Resource type (e.g. "assets", "work-orders")'),
       items: z
-        .array(z.record(z.unknown()))
+        .array(z.record(z.string(), z.unknown()))
         .min(1)
         .max(100)
         .describe(

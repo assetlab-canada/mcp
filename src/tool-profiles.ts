@@ -9,7 +9,7 @@
  * Selected with `?profile=<name>` on the MCP endpoint. An unknown name is
  * rejected by the Worker rather than silently serving all 466.
  */
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 
 export const TOOL_PROFILES = {
   core: [
@@ -68,7 +68,7 @@ You have a curated subset of AssetLab's tools: sites, buildings, locations, asse
 }
 
 /**
- * Returns a view of the server whose `tool()` drops anything outside the
+ * Returns a view of the server whose `registerTool()` drops anything outside the
  * profile. Registration is the only thing this is used for; the caller keeps
  * the real server for `connect()`.
  */
@@ -76,10 +76,9 @@ export function withToolProfile(server: McpServer, profile: ToolProfileName): Mc
   const allowed = new Set<string>(TOOL_PROFILES[profile])
   return new Proxy(server, {
     get(target, prop, receiver) {
-      if (prop !== 'tool') return Reflect.get(target, prop, receiver)
-      const register = target.tool.bind(target)
-      return (...args: Parameters<typeof register>) =>
-        allowed.has(String(args[0])) ? register(...args) : undefined
+      if (prop !== 'registerTool') return Reflect.get(target, prop, receiver)
+      const register = target.registerTool.bind(target) as (...a: unknown[]) => unknown
+      return (...args: unknown[]) => (allowed.has(String(args[0])) ? register(...args) : undefined)
     },
   })
 }

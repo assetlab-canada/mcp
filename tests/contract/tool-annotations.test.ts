@@ -5,7 +5,7 @@
 // calls to confirm with the user. A read tool marked writable costs a needless
 // prompt; a delete tool marked read-only skips one that matters.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import { toolAnnotations, toolTitle } from '../../src/tool-annotations.js'

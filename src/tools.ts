@@ -5,7 +5,7 @@
  * Write tools require API keys with the appropriate scope (e.g. parts:write).
  */
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
 import type { AssetLabClient } from './client.js'
 import { formatError, formatResult } from './response-shaping.js'
@@ -400,7 +400,7 @@ const searchSchema = {
   search: z.string().max(200).optional().describe('Search by name'),
 }
 
-const uuidParam = z.string().uuid()
+const uuidParam = z.string().guid()
 
 /**
  * Smart list: if user explicitly passes page/per_page, use single-page list().
@@ -431,11 +431,11 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
-      building_id: z.string().uuid().optional().describe('Filter by building ID'),
-      system_class_id: z.string().uuid().optional().describe('Filter by system class ID'),
-      system_group_id: z.string().uuid().optional().describe('Filter by system group ID'),
-      system_id: z.string().uuid().optional().describe('Filter by system ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
+      building_id: z.string().guid().optional().describe('Filter by building ID'),
+      system_class_id: z.string().guid().optional().describe('Filter by system class ID'),
+      system_group_id: z.string().guid().optional().describe('Filter by system group ID'),
+      system_id: z.string().guid().optional().describe('Filter by system ID'),
     },
     async params => {
       try {
@@ -480,7 +480,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
         .string()
         .optional()
         .describe('Filter by type: CORRECTIVE, PREVENTIVE, EMERGENCY, INSPECTION'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -552,7 +552,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -574,8 +574,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      building_id: z.string().uuid().optional().describe('Filter by building ID'),
-      location_type_id: z.string().uuid().optional().describe('Filter by location type ID'),
+      building_id: z.string().guid().optional().describe('Filter by building ID'),
+      location_type_id: z.string().guid().optional().describe('Filter by location type ID'),
     },
     async params => {
       try {
@@ -597,7 +597,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      system_group_id: z.string().uuid().optional().describe('Filter by system group ID'),
+      system_group_id: z.string().guid().optional().describe('Filter by system group ID'),
     },
     async params => {
       try {
@@ -615,7 +615,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      system_class_id: z.string().uuid().optional().describe('Filter by system class ID'),
+      system_class_id: z.string().guid().optional().describe('Filter by system class ID'),
     },
     async params => {
       try {
@@ -655,7 +655,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...searchSchema,
       ...paginationSchema,
       status: z.string().optional().describe('Filter by status: active, inactive'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
       frequency: z
         .string()
         .optional()
@@ -725,7 +725,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       status: z.string().optional().describe('Filter by status: draft, published, archived'),
       work_category_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter by work category ID (look up with list_work_categories)'),
     },
@@ -758,7 +758,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List the items (questions) within form templates. Returned in sort order. Filter by template_id.',
     {
       ...paginationSchema,
-      template_id: z.string().uuid().optional().describe('Filter by form template ID'),
+      template_id: z.string().guid().optional().describe('Filter by form template ID'),
     },
     async params => {
       try {
@@ -790,8 +790,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...paginationSchema,
       subject_type: z.string().optional().describe('Filter by subject type'),
-      subject_id: z.string().uuid().optional().describe('Filter by subject ID'),
-      template_id: z.string().uuid().optional().describe('Filter by form template ID'),
+      subject_id: z.string().guid().optional().describe('Filter by subject ID'),
+      template_id: z.string().guid().optional().describe('Filter by form template ID'),
       status: z.string().optional().describe('Filter by status'),
     },
     async params => {
@@ -823,7 +823,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List the per-question answer values within form responses. Read-only.',
     {
       ...paginationSchema,
-      response_id: z.string().uuid().optional().describe('Filter by form response ID'),
+      response_id: z.string().guid().optional().describe('Filter by form response ID'),
       item_key: z.string().optional().describe('Filter by item key'),
     },
     async params => {
@@ -962,7 +962,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...searchSchema,
       ...paginationSchema,
       status: z.string().optional().describe('Filter by status: active, archived'),
-      system_id: z.string().uuid().optional().describe('Filter by system ID'),
+      system_id: z.string().guid().optional().describe('Filter by system ID'),
     },
     async params => {
       try {
@@ -998,7 +998,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
       category: z.string().max(100).optional().describe('Filter by category (partial match)'),
     },
     async params => {
@@ -1082,7 +1082,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
         .optional()
         .describe('Filter by status: SUBMITTED, APPROVED, REJECTED, CONVERTED'),
       priority: z.string().optional().describe('Filter by priority: LOW, MEDIUM, HIGH, CRITICAL'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -1119,8 +1119,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...searchSchema,
       ...paginationSchema,
       status: z.string().optional().describe('Filter by status: pending, approved, paid, voided'),
-      vendor_id: z.string().uuid().optional().describe('Filter by vendor ID'),
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      vendor_id: z.string().guid().optional().describe('Filter by vendor ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
     },
     async params => {
       try {
@@ -1162,8 +1162,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
         .describe(
           'Filter by status: draft, issued, partially_received, received, closed, cancelled'
         ),
-      vendor_id: z.string().uuid().optional().describe('Filter by vendor ID'),
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      vendor_id: z.string().guid().optional().describe('Filter by vendor ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
     },
     async params => {
       try {
@@ -1194,8 +1194,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List purchase order line items: description, optional part, quantity, unit_cost and quantity_received. Filter by purchase_order_id or part_id. A PO with lines takes its amount from them. unit_cost is a bare number with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      purchase_order_id: z.string().uuid().optional().describe('Filter by purchase order ID'),
-      part_id: z.string().uuid().optional().describe('Filter by part ID'),
+      purchase_order_id: z.string().guid().optional().describe('Filter by purchase order ID'),
+      part_id: z.string().guid().optional().describe('Filter by part ID'),
     },
     async params => {
       try {
@@ -1226,10 +1226,10 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List the extra records a purchase order is linked to for reference: each row has exactly one of work_order_id, pm_schedule_id or project_id. Links never add to committed cost; the PO is charged only to its own project_id / work_order_id. Filter by any of those four IDs.',
     {
       ...paginationSchema,
-      purchase_order_id: z.string().uuid().optional().describe('Filter by purchase order ID'),
-      work_order_id: z.string().uuid().optional().describe('Filter by linked work order ID'),
-      pm_schedule_id: z.string().uuid().optional().describe('Filter by linked PM schedule ID'),
-      project_id: z.string().uuid().optional().describe('Filter by linked project ID'),
+      purchase_order_id: z.string().guid().optional().describe('Filter by purchase order ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by linked work order ID'),
+      pm_schedule_id: z.string().guid().optional().describe('Filter by linked PM schedule ID'),
+      project_id: z.string().guid().optional().describe('Filter by linked project ID'),
     },
     async params => {
       try {
@@ -1265,9 +1265,9 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
-      category_id: z.string().uuid().optional().describe('Filter by cost category ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
+      category_id: z.string().guid().optional().describe('Filter by cost category ID'),
     },
     async params => {
       try {
@@ -1307,8 +1307,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
         .string()
         .optional()
         .describe('Filter by status: draft, submitted, approved, rejected'),
-      vendor_id: z.string().uuid().optional().describe('Filter by vendor ID'),
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      vendor_id: z.string().guid().optional().describe('Filter by vendor ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
     },
     async params => {
       try {
@@ -1400,7 +1400,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      group_id: z.string().uuid().optional().describe('Filter by asset type group ID'),
+      group_id: z.string().guid().optional().describe('Filter by asset type group ID'),
     },
     async params => {
       try {
@@ -1546,7 +1546,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...searchSchema,
       ...paginationSchema,
       is_active: z.enum(['true', 'false']).optional().describe('Filter by active status'),
-      parent_id: z.string().uuid().optional().describe('Filter by parent category ID'),
+      parent_id: z.string().guid().optional().describe('Filter by parent category ID'),
     },
     async params => {
       try {
@@ -1569,8 +1569,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...searchSchema,
       ...paginationSchema,
       year: z.number().int().optional().describe('Filter by budget year (e.g. 2026)'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
-      building_id: z.string().uuid().optional().describe('Filter by building ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
+      building_id: z.string().guid().optional().describe('Filter by building ID'),
       funding_source: z.enum(['O&M', 'Capital']).optional().describe('Filter by funding source'),
       module: z
         .enum(['facilities', 'infrastructure', 'none'])
@@ -1646,7 +1646,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List comments on assets. Filter by asset_id to get comments for a specific asset.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
     },
     async params => {
       try {
@@ -1681,13 +1681,13 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List asset cost records - this is what the AssetLab UI shows on the main "Expenses" page (top-level nav). Each record includes amount, cost_date, category (Repair, PM, Operation, Replacement, Decommission, Other), description, invoice_number, po_number, and links to asset/site/building/work_order. Distinct from list_expenses, which returns project-scoped expenses without invoice/PO fields. Filter by asset, site, category, or work order. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
       category: z
         .enum(['Repair', 'PM', 'Operation', 'Replacement', 'Decommission'])
         .optional()
         .describe('Filter by cost category'),
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
     },
     async params => {
       try {
@@ -1722,7 +1722,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List asset replacement plans for lifecycle/capital planning. Filter by asset, status, priority, or planned year. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
       status: z
         .enum(['PLANNED', 'BUDGETED', 'APPROVED', 'COMPLETED', 'CANCELLED'])
         .optional()
@@ -1766,7 +1766,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List asset risk assessment history. Shows risk scores, condition scores, and trigger events over time. Condition scores are 0-100: 85+ Excellent, 70-84 Good, 55-69 Fair, 40-54 Poor, below 40 Critical.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
       trigger_event: z
         .enum(['maintenance', 'inspection', 'manual_update', 'scheduled'])
         .optional()
@@ -1805,7 +1805,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List comments on work orders. Filter by work_order_id to get comments for a specific work order.',
     {
       ...paginationSchema,
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
     },
     async params => {
       try {
@@ -1840,7 +1840,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List work order schedules (technician day plans). Filter by technician_id + scheduled_date to get one technician's ordered day: rows are returned by date, then stop_order (the day-plan stop sequence; rows without stop_order sort last), then start time. travel_time_minutes is a straight-line estimate from the previous stop.",
     {
       ...paginationSchema,
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
       technician_id: z.string().optional().describe('Filter by technician (Clerk user ID)'),
       scheduled_date: z.string().optional().describe('Filter by exact date (YYYY-MM-DD)'),
       date_from: z.string().optional().describe('Filter: scheduled_date on or after (YYYY-MM-DD)'),
@@ -1880,8 +1880,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      phase_id: z.string().uuid().optional().describe('Filter by phase ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      phase_id: z.string().guid().optional().describe('Filter by phase ID'),
       status: z
         .enum(['todo', 'in_progress', 'completed', 'blocked', 'cancelled'])
         .optional()
@@ -1925,7 +1925,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
       status: z
         .enum(['pending', 'completed', 'missed', 'at_risk'])
         .optional()
@@ -1964,7 +1964,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List project phases. Filter by project or status (pending, in_progress, completed, skipped).',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
       status: z
         .enum(['pending', 'in_progress', 'completed', 'skipped'])
         .optional()
@@ -2003,7 +2003,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List project budget line items (labor, materials, equipment, subcontractors, permits, contingency, other). Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
       category: z
         .enum([
           'labor',
@@ -2050,8 +2050,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List project time entries for labor tracking. Filter by project, task, or user.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      task_id: z.string().uuid().optional().describe('Filter by task ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      task_id: z.string().guid().optional().describe('Filter by task ID'),
       user_id: z.string().optional().describe('Filter by user ID'),
     },
     async params => {
@@ -2087,7 +2087,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List comments on projects. Supports threaded replies via parent_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
     },
     async params => {
       try {
@@ -2122,8 +2122,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List compliance records - audit trail of completed compliance checks linked to work orders and PM schedules.',
     {
       ...paginationSchema,
-      compliance_item_id: z.string().uuid().optional().describe('Filter by compliance item ID'),
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
+      compliance_item_id: z.string().guid().optional().describe('Filter by compliance item ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
     },
     async params => {
       try {
@@ -2155,12 +2155,12 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       compliance_item_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Compliance item ID - resolve via list_compliance_items'),
       pm_schedule_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('PM schedule ID - resolve via list_pm_schedules'),
     },
@@ -2194,10 +2194,10 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
 
   server.tool(
     'list_site_fci_history',
-    'List Facility Condition Index (FCI) history for sites. Track FCI trends over time. Condition scores are 0-100: 85+ Excellent, 70-84 Good, 55-69 Fair, 40-54 Poor, below 40 Critical.',
+    'List Facility Condition Index (FCI) history for sites. fci_value is deferred renewal cost divided by current replacement value, a fraction where LOWER is healthier: below 0.05 good, 0.05-0.10 fair, 0.10 and above poor. It is not a 0-100 condition score. To chart one site, use show_site_fci_trend.',
     {
       ...paginationSchema,
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -2268,8 +2268,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List vendor-to-site assignments showing which vendors serve which sites.',
     {
       ...paginationSchema,
-      vendor_id: z.string().uuid().optional().describe('Filter by vendor ID'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      vendor_id: z.string().guid().optional().describe('Filter by vendor ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -2304,8 +2304,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List contract-to-site mappings showing which contracts cover which sites. No single-record lookup (composite key).',
     {
       ...paginationSchema,
-      contract_id: z.string().uuid().optional().describe('Filter by contract ID'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      contract_id: z.string().guid().optional().describe('Filter by contract ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -2371,10 +2371,10 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...paginationSchema,
       entity_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter by entity ID (e.g. asset ID, work order ID)'),
-      field_definition_id: z.string().uuid().optional().describe('Filter by field definition ID'),
+      field_definition_id: z.string().guid().optional().describe('Filter by field definition ID'),
     },
     async params => {
       try {
@@ -2448,8 +2448,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List parts associated with assets. Filter by asset_id to get all parts for one asset, or by part_id to see all assets using a specific part.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
-      part_id: z.string().uuid().optional().describe('Filter by part ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
+      part_id: z.string().guid().optional().describe('Filter by part ID'),
     },
     async params => {
       try {
@@ -2485,7 +2485,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
       category: z
         .enum(['om', 'commissioning', 'warranty', 'installation', 'specification', 'other'])
         .optional()
@@ -2525,10 +2525,10 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
-      work_request_id: z.string().uuid().optional().describe('Filter by work request ID'),
-      pm_schedule_id: z.string().uuid().optional().describe('Filter by PM schedule ID'),
-      pm_template_id: z.string().uuid().optional().describe('Filter by PM template ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
+      work_request_id: z.string().guid().optional().describe('Filter by work request ID'),
+      pm_schedule_id: z.string().guid().optional().describe('Filter by PM schedule ID'),
+      pm_template_id: z.string().guid().optional().describe('Filter by PM template ID'),
     },
     async params => {
       try {
@@ -2564,8 +2564,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      folder_id: z.string().uuid().optional().describe('Filter by folder ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      folder_id: z.string().guid().optional().describe('Filter by folder ID'),
     },
     async params => {
       try {
@@ -2601,7 +2601,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      contract_id: z.string().uuid().optional().describe('Filter by contract ID'),
+      contract_id: z.string().guid().optional().describe('Filter by contract ID'),
     },
     async params => {
       try {
@@ -2637,7 +2637,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
       user_id: z.string().optional().describe('Filter by user ID (Clerk ID)'),
       is_active: z
         .enum(['true', 'false'])
@@ -2677,8 +2677,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List task dependencies. Filter by task_id or depends_on_task_id to see dependency chains.',
     {
       ...paginationSchema,
-      task_id: z.string().uuid().optional().describe('Filter by task ID'),
-      depends_on_task_id: z.string().uuid().optional().describe('Filter by depended-on task ID'),
+      task_id: z.string().guid().optional().describe('Filter by task ID'),
+      depends_on_task_id: z.string().guid().optional().describe('Filter by depended-on task ID'),
       dependency_type: z
         .enum(['finish_to_start', 'start_to_start', 'finish_to_finish', 'start_to_finish'])
         .optional()
@@ -2718,7 +2718,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
       timeframe: z
         .enum(['monthly', 'quarterly', 'bi-annually', 'annually'])
         .optional()
@@ -2758,7 +2758,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List historical cost snapshots for projects. Filter by project_id to see cost trends over time. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
     },
     async params => {
       try {
@@ -2793,8 +2793,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List location assignments for projects. Filter by project_id or location_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      location_id: z.string().uuid().optional().describe('Filter by location ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      location_id: z.string().guid().optional().describe('Filter by location ID'),
     },
     async params => {
       try {
@@ -2829,8 +2829,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List site assignments for projects. Filter by project_id or site_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -2865,8 +2865,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List building assignments for projects. Filter by project_id or building_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      building_id: z.string().uuid().optional().describe('Filter by building ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      building_id: z.string().guid().optional().describe('Filter by building ID'),
     },
     async params => {
       try {
@@ -2901,8 +2901,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List system assignments for projects. Filter by project_id or system_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      system_id: z.string().uuid().optional().describe('Filter by system ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      system_id: z.string().guid().optional().describe('Filter by system ID'),
     },
     async params => {
       try {
@@ -2937,8 +2937,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List system class assignments for projects. Filter by project_id or system_class_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      system_class_id: z.string().uuid().optional().describe('Filter by system class ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      system_class_id: z.string().guid().optional().describe('Filter by system class ID'),
     },
     async params => {
       try {
@@ -2973,8 +2973,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List system group assignments for projects. Filter by project_id or system_group_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      system_group_id: z.string().uuid().optional().describe('Filter by system group ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      system_group_id: z.string().guid().optional().describe('Filter by system group ID'),
     },
     async params => {
       try {
@@ -3010,7 +3010,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
       status: z
         .enum(['identified', 'analyzing', 'mitigating', 'resolved', 'accepted'])
         .optional()
@@ -3058,8 +3058,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List asset assignments for projects. Filter by project_id or asset_id.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
     },
     async params => {
       try {
@@ -3132,8 +3132,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List system class links for service areas. Filter by service_area_id or system_class_id.',
     {
       ...paginationSchema,
-      service_area_id: z.string().uuid().optional().describe('Filter by service area ID'),
-      system_class_id: z.string().uuid().optional().describe('Filter by system class ID'),
+      service_area_id: z.string().guid().optional().describe('Filter by service area ID'),
+      system_class_id: z.string().guid().optional().describe('Filter by system class ID'),
     },
     async params => {
       try {
@@ -3154,8 +3154,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List site links for service areas. Filter by service_area_id or site_id.',
     {
       ...paginationSchema,
-      service_area_id: z.string().uuid().optional().describe('Filter by service area ID'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      service_area_id: z.string().guid().optional().describe('Filter by service area ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
       try {
@@ -3177,7 +3177,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      service_area_id: z.string().uuid().optional().describe('Filter by service area ID'),
+      service_area_id: z.string().guid().optional().describe('Filter by service area ID'),
       category: z
         .enum([
           'quality',
@@ -3250,7 +3250,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List LoS measurement values (time-series). Filter by measure, period type, date range, or auto/manual.',
     {
       ...paginationSchema,
-      los_measure_id: z.string().uuid().optional().describe('Filter by LoS measure ID'),
+      los_measure_id: z.string().guid().optional().describe('Filter by LoS measure ID'),
       period_type: z
         .enum(['monthly', 'quarterly', 'semi_annual', 'annual'])
         .optional()
@@ -3303,7 +3303,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List proposed levels of service: one row per LoS measure and future year (O. Reg. 588/17 s. 6(1)). A community measure carries target_statement; a technical measure carries target_value, in the measure's own unit (not money). Filter by measure or year.",
     {
       ...paginationSchema,
-      los_measure_id: z.string().uuid().optional().describe('Filter by LoS measure ID'),
+      los_measure_id: z.string().guid().optional().describe('Filter by LoS measure ID'),
       year: z.number().int().min(2000).max(2200).optional().describe('Filter by target year'),
     },
     async params => {
@@ -3339,7 +3339,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List recorded changes to a LoS measure's target, minimum and stretch goal, newest first. Recording began on 2026-09-20: a change made before that date left no entry, so an empty list does not mean the target never changed. One entry per measure per day; a second change the same day overwrites that day's entry. Values are in the measure's own unit (not money). Filter by measure ID.",
     {
       ...paginationSchema,
-      los_measure_id: z.string().uuid().optional().describe('Filter by LoS measure ID'),
+      los_measure_id: z.string().guid().optional().describe('Filter by LoS measure ID'),
     },
     async params => {
       try {
@@ -3395,7 +3395,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List technical Level of Service targets for building systems. One base target per system and metric, set once for the organization. Each building is held to a version adjusted by its criticality: a lower-is-better target is multiplied by the tier's modifier, a higher-is-better one keeps its distance from a perfect score multiplied by it (condition 70 becomes 82 at a Critical facility, 58 at a Low one). Derived targets never leave the metric's scale. Metrics: fci (0-100 percent, lower is better), asset_condition_avg (0-100, higher is better, read with the fixed condition bands), asset_past_useful_life_pct (0-100 percent, lower is better), risk_score_avg (0-25, lower is better). None of these values are money. Filter by system, metric or active.",
     {
       ...paginationSchema,
-      system_id: z.string().uuid().optional().describe('Filter by system ID'),
+      system_id: z.string().guid().optional().describe('Filter by system ID'),
       metric: z.enum(LOS_TARGET_METRICS).optional().describe('Filter by metric'),
       active: z.boolean().optional().describe('Filter by active (true) or paused (false)'),
     },
@@ -3535,9 +3535,9 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List monthly technical Level of Service readings, newest first. Read-only. One reading per tracked pair (a system in a building, or an infrastructure network) and metric per month, recorded the first time anyone opens the Status screen in that month, so a month nobody opened it is missing rather than zero. actual is the measured value and is null when there was no data; base_target is the organization-wide target and derived_target is what that facility was held to at the time, after its criticality was applied; status is exceeding, meeting, below, failing or no_data. fci and asset_past_useful_life_pct are percentages on 0-100 (not fractions), asset_condition_avg is 0-100 and risk_score_avg is 0-25. None of these values are money. Filter by system, building, network, metric, or a period range on period_start.',
     {
       ...paginationSchema,
-      system_id: z.string().uuid().optional().describe('Filter by system ID'),
-      building_id: z.string().uuid().optional().describe('Filter by building ID'),
-      network_id: z.string().uuid().optional().describe('Filter by infrastructure network ID'),
+      system_id: z.string().guid().optional().describe('Filter by system ID'),
+      building_id: z.string().guid().optional().describe('Filter by building ID'),
+      network_id: z.string().guid().optional().describe('Filter by infrastructure network ID'),
       metric: z.enum(LOS_TARGET_METRICS).optional().describe('Filter by metric'),
       period_from: z
         .string()
@@ -3585,12 +3585,12 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...paginationSchema,
       building_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter by building ID (building-scoped floorplans)'),
       site_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter by site ID (site-scoped floorplans only)'),
       status: z
@@ -3627,10 +3627,10 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List labeled rooms/zones on a floorplan. Each region has a polygon (normalized 0-1 coordinates), an optional location_id linking to the Locations hierarchy, and a "reviewed" flag for AI-detected regions.',
     {
       ...paginationSchema,
-      floorplan_id: z.string().uuid().optional().describe('Filter by floorplan ID'),
+      floorplan_id: z.string().guid().optional().describe('Filter by floorplan ID'),
       location_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter regions linked to a specific location'),
       reviewed: z.boolean().optional().describe('Filter by reviewed state'),
@@ -3666,9 +3666,9 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List asset pin placements on floorplans. Each asset has at most one placement globally. Filter by floorplan_id to see all pins on one floor, or by asset_id to find where a specific asset is placed.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
-      floorplan_id: z.string().uuid().optional().describe('Filter by floorplan ID'),
-      region_id: z.string().uuid().optional().describe('Filter by region ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
+      floorplan_id: z.string().guid().optional().describe('Filter by floorplan ID'),
+      region_id: z.string().guid().optional().describe('Filter by region ID'),
     },
     async params => {
       try {
@@ -3851,11 +3851,11 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      network_id: z.string().uuid().optional().describe('Filter by infrastructure network ID'),
+      network_id: z.string().guid().optional().describe('Filter by infrastructure network ID'),
       feature_type: z.enum(['segment', 'node']).optional().describe('Filter by feature type'),
-      site_id: z.string().uuid().optional().describe('Filter by site ID'),
+      site_id: z.string().guid().optional().describe('Filter by site ID'),
       status_id: z.string().optional().describe('Filter by asset status ID'),
-      asset_type_id: z.string().uuid().optional().describe('Filter by asset type ID'),
+      asset_type_id: z.string().guid().optional().describe('Filter by asset type ID'),
       condition_min: z.number().optional().describe('Minimum condition score (0-100)'),
       condition_max: z.number().optional().describe('Maximum condition score (0-100)'),
       risk_score_min: z.number().optional().describe('Minimum risk score'),
@@ -3900,7 +3900,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
       ...paginationSchema,
       feature_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter by infrastructure asset (feature) ID'),
       inspector_id: z.string().optional().describe('Filter by inspector user ID'),
@@ -3949,7 +3949,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List point-in-time condition assessments recorded against assets. Filter by asset, assessor, method, condition score range, or assessment date range. Condition scores are 0-100: 85+ Excellent, 70-84 Good, 55-69 Fair, 40-54 Poor, below 40 Critical. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
       assessor_id: z.string().optional().describe('Filter by assessor user ID'),
       method: z.string().optional().describe('Filter by method (visual | detailed | vendor)'),
       assessed_on_from: z
@@ -3996,8 +3996,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List facility lifecycle strategy events - condition-triggered maintenance/rehabilitation events keyed on an asset-type scope (exactly one of asset_type_id or asset_type_group_id), never on individual assets. The events sharing one scope form that scope's strategy; an asset resolves its type's own strategy first, else its type group's. Filter by asset_type_id, asset_type_group_id, event_class, or is_active. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.",
     {
       ...paginationSchema,
-      asset_type_id: z.string().uuid().optional().describe('Filter by asset type ID'),
-      asset_type_group_id: z.string().uuid().optional().describe('Filter by asset type group ID'),
+      asset_type_id: z.string().guid().optional().describe('Filter by asset type ID'),
+      asset_type_group_id: z.string().guid().optional().describe('Filter by asset type group ID'),
       event_class: z
         .enum(['preventive', 'rehabilitation'])
         .optional()
@@ -4040,11 +4040,11 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List betterments - capital work that extended a facility asset's life, such as an elevator modernization or a boiler retube. Each records what the work cost (capitalized_amount), how much service life it bought (added_life_years), and when it went into service (occurred_on). A betterment re-bases the asset's depreciation from its own date and never changes the asset's original in-service date. Filter by asset_id, project_id or work_order_id. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.",
     {
       ...paginationSchema,
-      asset_id: z.string().uuid().optional().describe('Filter by asset ID'),
-      project_id: z.string().uuid().optional().describe('Filter by the project that delivered it'),
+      asset_id: z.string().guid().optional().describe('Filter by asset ID'),
+      project_id: z.string().guid().optional().describe('Filter by the project that delivered it'),
       work_order_id: z
         .string()
-        .uuid()
+        .guid()
         .optional()
         .describe('Filter by the work order that delivered it'),
     },
@@ -4081,8 +4081,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List cost rows for infrastructure features. Filter by feature, work order, category, or cost date range. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...paginationSchema,
-      feature_id: z.string().uuid().optional().describe('Filter by infrastructure feature ID'),
-      work_order_id: z.string().uuid().optional().describe('Filter by work order ID'),
+      feature_id: z.string().guid().optional().describe('Filter by infrastructure feature ID'),
+      work_order_id: z.string().guid().optional().describe('Filter by work order ID'),
       category: z
         .enum(['Repair', 'PM', 'Operation', 'Replacement', 'Decommission'])
         .optional()
@@ -4123,8 +4123,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List parts associated with infrastructure features. Filter by feature or part.',
     {
       ...paginationSchema,
-      feature_id: z.string().uuid().optional().describe('Filter by infrastructure feature ID'),
-      part_id: z.string().uuid().optional().describe('Filter by part ID'),
+      feature_id: z.string().guid().optional().describe('Filter by infrastructure feature ID'),
+      part_id: z.string().guid().optional().describe('Filter by part ID'),
     },
     async params => {
       try {
@@ -4160,7 +4160,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     {
       ...searchSchema,
       ...paginationSchema,
-      feature_id: z.string().uuid().optional().describe('Filter by infrastructure feature ID'),
+      feature_id: z.string().guid().optional().describe('Filter by infrastructure feature ID'),
       category: z.string().optional().describe('Filter by document category'),
     },
     async params => {
@@ -4196,7 +4196,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List comments on infrastructure features. Filter by feature.',
     {
       ...paginationSchema,
-      feature_id: z.string().uuid().optional().describe('Filter by infrastructure feature ID'),
+      feature_id: z.string().guid().optional().describe('Filter by infrastructure feature ID'),
     },
     async params => {
       try {
@@ -4231,7 +4231,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List operational hydraulic boundaries (pressure zones, DMAs, sewersheds, etc.). Boundary is returned as a GeoJSON Polygon in EPSG:4326. Filter by network or kind.',
     {
       ...paginationSchema,
-      network_id: z.string().uuid().optional().describe('Filter by infrastructure network ID'),
+      network_id: z.string().guid().optional().describe('Filter by infrastructure network ID'),
       kind: z
         .enum(['pressure_zone', 'dma', 'sewershed', 'storm_catchment', 'maintenance_district'])
         .optional()
@@ -4270,8 +4270,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'List links between projects and infrastructure features. Filter by project or feature.',
     {
       ...paginationSchema,
-      project_id: z.string().uuid().optional().describe('Filter by project ID'),
-      feature_id: z.string().uuid().optional().describe('Filter by infrastructure feature ID'),
+      project_id: z.string().guid().optional().describe('Filter by project ID'),
+      feature_id: z.string().guid().optional().describe('Filter by infrastructure feature ID'),
     },
     async params => {
       try {
@@ -4307,7 +4307,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     "List the risk + condition history captured for infrastructure features (populated automatically when a feature's risk fields change). Read-only. Filter by feature, source, or capture date range.",
     {
       ...paginationSchema,
-      feature_id: z.string().uuid().optional().describe('Filter by infrastructure feature ID'),
+      feature_id: z.string().guid().optional().describe('Filter by infrastructure feature ID'),
       source: z.string().optional().describe('Filter by capture source (e.g. manual_update)'),
       captured_at_from: z.string().optional().describe('Entries on/after this date (YYYY-MM-DD)'),
       captured_at_to: z.string().optional().describe('Entries on/before this date (YYYY-MM-DD)'),

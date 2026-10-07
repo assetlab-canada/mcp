@@ -1,9 +1,10 @@
 // F-266. update_work_order had no completion_notes field, so an assistant closing a work
 // order could not record what was done, although the gateway accepts the column.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
+import { withToolAnnotations } from '../../src/tool-annotations.js'
 import { registerWriteTools } from '../../src/tools-write.js'
 import { apiKey, single } from '../fixtures/factories.js'
 import { type FetchFake, installFetchFake } from '../fixtures/fake-fetch.js'
@@ -19,7 +20,7 @@ describe('update_work_order completion (F-266)', () => {
     server = new FakeMcpServer()
     fx = installFetchFake()
     const client = new AssetLabClient({ apiUrl: 'https://api.example.com', apiKey: apiKey() })
-    registerWriteTools(asMcpServer(server) as McpServer, client)
+    registerWriteTools(withToolAnnotations(asMcpServer(server) as McpServer), client)
   })
   afterEach(() => fx.restore())
 

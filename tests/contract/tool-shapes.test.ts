@@ -9,7 +9,7 @@
 //  - Bulk surface and upload surface are present.
 //  - SERVER_INSTRUCTIONS string is non-empty and references the hierarchies.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { AssetLabClient } from '../../src/client.js'

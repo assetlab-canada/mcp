@@ -8,8 +8,17 @@
  * derived rather than written out on 480 registrations. A name outside the
  * known verbs throws at registration, so a new tool cannot ship unannotated.
  */
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js'
+import type { CallToolResult, McpServer, ToolAnnotations } from '@modelcontextprotocol/server'
+import { type ZodRawShape, z } from 'zod'
+
+// Keep zod 3's caller-facing wording: ids use guid() to accept what uuid() did, and a missing field says "Required".
+z.config({
+  customError: issue => {
+    if (issue.code === 'invalid_format' && issue.format === 'guid') return 'Invalid UUID'
+    if (issue.code === 'invalid_type' && issue.input === undefined) return 'Required'
+    return undefined
+  },
+})
 
 type Hints = Required<
   Pick<ToolAnnotations, 'readOnlyHint' | 'destructiveHint' | 'idempotentHint' | 'openWorldHint'>
@@ -38,6 +47,8 @@ const OVERWRITE: Hints = {
 const HINTS_BY_VERB: Record<string, Hints> = {
   list: READ,
   get: READ,
+  // show_* renders an MCP Apps view over a read.
+  show: READ,
   create: CREATE,
   upload: CREATE,
   update: OVERWRITE,
@@ -73,30 +84,31 @@ export function toolAnnotations(name: string): ToolAnnotations & { title: string
   return { title: toolTitle(name), ...hints }
 }
 
+/** The registration surface tools.ts and tools-write.ts are written against. */
+export type ToolRegistrar = {
+  tool<Shape extends ZodRawShape>(
+    name: string,
+    description: string,
+    shape: Shape,
+    handler: (args: z.infer<z.ZodObject<Shape>>) => CallToolResult | Promise<CallToolResult>
+  ): void
+}
+
 /**
- * Returns a view of the server whose `tool(name, description, schema, handler)`
- * registers with a title and hints. Composes with `withToolProfile`.
+ * Adapts the server to `tool(name, description, shape, handler)`, registering each
+ * tool with its title and hints. SDK v2 removed that positional overload; keeping
+ * it here leaves 466 call sites, and the guards that parse them, unchanged.
+ * Composes with `withToolProfile`, which filters `registerTool` underneath.
  */
-export function withToolAnnotations(server: McpServer): McpServer {
-  return new Proxy(server, {
-    get(target, prop, receiver) {
-      if (prop !== 'tool') return Reflect.get(target, prop, receiver)
-      return (...args: unknown[]) => {
-        const [name, description, schema, handler] = args
-        if (args.length !== 4 || typeof name !== 'string' || typeof handler !== 'function') {
-          throw new Error(
-            `Tool "${String(name)}" must be registered as tool(name, description, schema, handler).`
-          )
-        }
-        const annotations = toolAnnotations(name)
-        const register = target.tool.bind(target) as (...a: unknown[]) => unknown
-        const registered = register(name, description, schema, annotations, handler)
-        // The positional overload has no title slot; the spec's top-level title is what clients list.
-        if (registered && typeof registered === 'object') {
-          ;(registered as { title?: string }).title = annotations.title
-        }
-        return registered
-      }
+export function withToolAnnotations(server: McpServer): ToolRegistrar {
+  return {
+    tool(name, description, shape, handler) {
+      const annotations = toolAnnotations(name)
+      server.registerTool(
+        name,
+        { title: annotations.title, description, inputSchema: z.object(shape), annotations },
+        handler
+      )
     },
-  })
+  }
 }

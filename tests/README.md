@@ -141,7 +141,7 @@ Named after the penetration-test finding IDs they guard:
    import { installFetchFake } from '../fixtures/fake-fetch.js'
    import { AssetLabClient } from '../../src/client.js'
    import { registerTools } from '../../src/tools.js'
-   import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+   import type { McpServer } from '@modelcontextprotocol/server'
    ```
 3. In `beforeEach`, install the fetch fake and register tools.
 4. Stub the gateway endpoint with `fx.on(method, pathname|regex, handler)`.

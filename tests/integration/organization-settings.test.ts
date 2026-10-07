@@ -5,7 +5,7 @@
 // reaches the singleton route, and a 403 for the missing scope arrives as text
 // the caller can act on rather than a flattened generic failure.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
 import { registerTools } from '../../src/tools.js'

@@ -4,13 +4,13 @@
   "title": "AssetLab",
   "description": "Work orders, PM schedules, assets, capital plans and infrastructure in AssetLab CMMS/EAM.",
   "websiteUrl": "https://assetlab.ca",
-  "version": "2.21.0",
+  "version": "3.0.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@assetlab/mcp-server",
-      "version": "2.21.0",
+      "version": "3.0.0",
       "transport": {
         "type": "stdio"
       },

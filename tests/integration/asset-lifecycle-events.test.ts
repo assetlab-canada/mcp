@@ -5,9 +5,10 @@
 // to an asset-type scope — exactly one of type / type group — never assets) live in the
 // tool descriptions and the gateway's validation; here we pin the wire contract.
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServer } from '@modelcontextprotocol/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetLabClient } from '../../src/client.js'
+import { withToolAnnotations } from '../../src/tool-annotations.js'
 import { registerTools } from '../../src/tools.js'
 import { registerWriteTools } from '../../src/tools-write.js'
 import { apiKey, paginated, single } from '../fixtures/factories.js'
@@ -19,7 +20,7 @@ function bootstrap(): { server: FakeMcpServer; fx: FetchFake } {
   const fx = installFetchFake()
   const client = new AssetLabClient({ apiUrl: 'https://api.example.com', apiKey: apiKey() })
   registerTools(asMcpServer(server) as McpServer, client)
-  registerWriteTools(asMcpServer(server) as McpServer, client)
+  registerWriteTools(withToolAnnotations(asMcpServer(server) as McpServer), client)
   return { server, fx }
 }
 
