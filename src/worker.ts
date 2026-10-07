@@ -12,8 +12,8 @@
  * REGISTER_IP_LIMITER, REGISTER_GLOBAL_LIMITER.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server'
-import { registerApps } from './apps/index.js'
 import { AssetLabClient } from './client.js'
 import {
   authServerMetadata,
@@ -26,13 +26,14 @@ import {
   protectedResourceMetadata,
   resolveAccessToken,
 } from './oauth.js'
+import { buildToolCatalogue, registerCatalogue } from './tool-catalogue.js'
 import {
   isToolProfile,
   PROFILE_INSTRUCTIONS,
   TOOL_PROFILES,
   withToolProfile,
 } from './tool-profiles.js'
-import { registerTools, SERVER_INSTRUCTIONS } from './tools.js'
+import { SERVER_INSTRUCTIONS } from './tools.js'
 import { VERSION } from './version.js'
 
 // Minimal subset of Cloudflare's KVNamespace surface - we don't depend on
@@ -82,6 +83,26 @@ function corsHeaders(request: Request): Record<string, string> {
 }
 
 const SERVER_INFO = { name: 'assetlab', version: VERSION }
+
+// What a request's tool calls need: its API key and the gateway it targets. Requests interleave
+// in one isolate, so this is bound per request rather than held in a variable; outside a request
+// it is absent, and the client fails instead of reusing another request's key.
+const requestContext = new AsyncLocalStorage<{ apiKey: string; apiUrl: string }>()
+
+function currentRequest(): { apiKey: string; apiUrl: string } {
+  const context = requestContext.getStore()
+  if (!context) throw new Error('No API key is bound to this request.')
+  return context
+}
+
+// Built at module load, which Workers counts against the startup limit rather than a request's
+// CPU budget: on the Free tier a request gets 10 ms, and building the catalogue takes longer.
+const catalogue = buildToolCatalogue(
+  new AssetLabClient({
+    apiKey: () => currentRequest().apiKey,
+    apiUrl: () => currentRequest().apiUrl,
+  })
+)
 
 function jsonResponse(
   body: unknown,
@@ -343,7 +364,6 @@ export default {
       )
     }
 
-    const client = new AssetLabClient({ apiKey, apiUrl: env.ASSETLAB_API_URL })
     const instructions = requestedProfile
       ? SERVER_INSTRUCTIONS + PROFILE_INSTRUCTIONS[requestedProfile]
       : SERVER_INSTRUCTIONS
@@ -351,14 +371,21 @@ export default {
     // clients (Claude.ai and ChatGPT today) through the SDK's stateless fallback.
     const handler = createMcpHandler(() => {
       const server = new McpServer(SERVER_INFO, { instructions })
-      registerTools(requestedProfile ? withToolProfile(server, requestedProfile) : server, client)
-      // Profiles serve clients that cannot render MCP Apps, so apps ship only on the full catalogue.
-      if (!requestedProfile) registerApps(server, client)
+      // Profiles serve clients that cannot render MCP Apps, so resources ship only on the full catalogue.
+      registerCatalogue(
+        requestedProfile ? withToolProfile(server, requestedProfile) : server,
+        catalogue,
+        {
+          resources: !requestedProfile,
+        }
+      )
       return server
     })
 
     try {
-      const response = await handler.fetch(normalizeRequest(request))
+      const response = await requestContext.run({ apiKey, apiUrl: env.ASSETLAB_API_URL }, () =>
+        handler.fetch(normalizeRequest(request))
+      )
       return withCors(response, request)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Internal server error'

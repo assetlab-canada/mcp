@@ -5,9 +5,10 @@
  * authenticated via Bearer API key.
  */
 
+/** Fixed values (stdio), or resolvers read on every call (the Worker's per-request context). */
 export interface AssetLabConfig {
-  apiUrl: string
-  apiKey: string
+  apiUrl: string | (() => string)
+  apiKey: string | (() => string)
 }
 
 export interface PaginatedResponse<T = Record<string, unknown>> {
@@ -68,17 +69,23 @@ function stripIdentityKeys<T extends Record<string, unknown>>(payload: T): T {
 const GATEWAY_REGION = 'ca-central-1'
 
 export class AssetLabClient {
-  private baseUrl: string
-  private apiKey: string
+  private readonly resolveApiUrl: () => string
+  private readonly resolveApiKey: () => string
 
   constructor(config: AssetLabConfig) {
-    // Ensure base URL ends without trailing slash and includes /v1
-    let url = config.apiUrl.replace(/\/+$/, '')
-    if (!url.endsWith('/v1')) {
-      url += '/v1'
-    }
-    this.baseUrl = url
-    this.apiKey = config.apiKey
+    const { apiUrl, apiKey } = config
+    this.resolveApiUrl = typeof apiUrl === 'function' ? apiUrl : () => apiUrl
+    this.resolveApiKey = typeof apiKey === 'function' ? apiKey : () => apiKey
+  }
+
+  /** The gateway base URL, without a trailing slash and ending in /v1. */
+  private get baseUrl(): string {
+    const url = this.resolveApiUrl().replace(/\/+$/, '')
+    return url.endsWith('/v1') ? url : `${url}/v1`
+  }
+
+  private get apiKey(): string {
+    return this.resolveApiKey()
   }
 
   async get<T = Record<string, unknown>>(
