@@ -11,7 +11,7 @@
 schedules, capital plans, and infrastructure networks in plain language, and create or
 update records hands-free.
 
-> **466 tools** across **100+ resources** · scoped, tenant-bound, audited ·
+> **480+ tools** across **100+ resources** · scoped, tenant-bound, audited ·
 > read *and* write · hosted or local
 
 ---
@@ -48,7 +48,7 @@ it; staff then use that agent inside ordinary Microsoft 365 Copilot.
 5. Publish the agent to the **Microsoft 365 Copilot** channel and have an admin approve it
 
 Use the `?profile=core` address here. Copilot Studio caps an agent at 128 tools and
-recommends 25-30; this server publishes 466, and the `core` profile answers with 28
+recommends 25-30; this server publishes 480+, and the `core` profile answers with 28
 covering sites, buildings, assets, work orders, work requests, PM schedules and vendors.
 Claude and ChatGPT have no such cap and should use the plain URL.
 
@@ -93,7 +93,7 @@ Your AssetLab administrator can provide the API URL for your organization.
 ## What's new in 2.7
 
 **A curated tool profile for Microsoft Copilot.** Adding `?profile=core` to the hosted
-server URL publishes 28 tools instead of 466, which is what makes the server usable in
+server URL publishes 28 tools instead of 480+, which is what makes the server usable in
 clients that cap how many tools one agent may host - Microsoft Copilot Studio allows 128
 and recommends 25-30. An unrecognized profile name is rejected rather than quietly serving
 the full catalog. Claude and ChatGPT are unaffected and keep the full tool set.
