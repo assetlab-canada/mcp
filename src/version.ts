@@ -11,4 +11,4 @@
  * only literal, and `tests/version.test.ts` fails if it drifts from `package.json`. Bump both
  * together — the test tells you if you forget.
  */
-export const VERSION = '3.0.1'
+export const VERSION = '3.0.2'

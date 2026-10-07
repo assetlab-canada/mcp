@@ -1,7 +1,7 @@
 {
   "name": "@assetlab/mcp-server",
   "mcpName": "ca.assetlab/mcp-server",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "MCP server for AssetLab — connect Claude or ChatGPT to your asset management data",
   "type": "module",
   "bin": {

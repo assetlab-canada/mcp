@@ -125,7 +125,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
 
   server.tool(
     'create_work_order',
-    'Create a new work order. Requires work_orders:write scope. REQUIRED fields: title, site_id, building_id, AND at least one association (asset_id OR location_id). A work order with no asset/location association is not valid - ask the user which one applies before calling. RECOMMENDED: work_category_id (look up via list_work_categories; omit only if no reasonable match exists). Location hierarchy: always resolve top-down by calling list_sites first, then list_buildings filtered by site_id, then list_locations filtered by building_id.',
+    'Create a new work order. Requires work_orders:write scope. REQUIRED: title. STRONGLY RECOMMENDED: site_id, building_id and at least one target (asset_id, location_id, system_ids or infrastructure_asset_ids) - the AssetLab app always sets one, and a work order with no target is hard to find and to cost, so ask the user which applies before calling. The API accepts a work order without a target. Also recommended: work_category_id (look up via list_work_categories; omit only if no reasonable match exists). Location hierarchy: always resolve top-down by calling list_sites first, then list_buildings filtered by site_id, then list_locations filtered by building_id.',
     {
       title: z.string().min(1).max(500).describe('Work order title (required)'),
       description: z.string().optional().describe('Detailed description'),
@@ -401,15 +401,21 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       consequence_of_failure_score: z
         .number()
         .int()
-        .min(0)
+        .min(1)
+        .max(5)
         .optional()
-        .describe('Consequence of failure score'),
+        .describe(
+          'Consequence of failure score, 1-5. Setting it makes it a manual value that a system change no longer replaces; send null to return it to the default from its system.'
+        ),
       likelihood_of_failure_score: z
         .number()
         .int()
-        .min(0)
+        .min(1)
+        .max(5)
         .optional()
-        .describe('Likelihood of failure score'),
+        .describe(
+          'Likelihood of failure score, 1-5. Derived from condition_score unless set: setting it makes it a manual value that condition changes no longer replace; send null to return it to derivation.'
+        ),
       safety_impact: z
         .enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
         .optional()
@@ -537,15 +543,21 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       consequence_of_failure_score: z
         .number()
         .int()
-        .min(0)
+        .min(1)
+        .max(5)
         .optional()
-        .describe('Consequence of failure score'),
+        .describe(
+          'Consequence of failure score, 1-5. Setting it makes it a manual value that a system change no longer replaces; send null to return it to the default from its system.'
+        ),
       likelihood_of_failure_score: z
         .number()
         .int()
-        .min(0)
+        .min(1)
+        .max(5)
         .optional()
-        .describe('Likelihood of failure score'),
+        .describe(
+          'Likelihood of failure score, 1-5. Derived from condition_score unless set: setting it makes it a manual value that condition changes no longer replace; send null to return it to derivation.'
+        ),
       safety_impact: z
         .enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
         .optional()
@@ -601,11 +613,13 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
     {
       title: z.string().min(1).max(500).describe('Work request title (required)'),
       description: z.string().optional().describe('Description'),
-      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Priority level'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().describe('Priority level'),
       status: z
-        .enum(['SUBMITTED', 'APPROVED', 'REJECTED', 'CONVERTED'])
+        .enum(['PENDING_REVIEW'])
         .optional()
-        .describe('Status'),
+        .describe(
+          'Omit it: new requests always start as PENDING_REVIEW. Approve or reject with update_work_request.'
+        ),
       site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
@@ -638,11 +652,11 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       id: z.string().guid().describe('Work request ID'),
       title: z.string().min(1).max(500).optional().describe('Work request title'),
       description: z.string().optional().describe('Description'),
-      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Priority level'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().describe('Priority level'),
       status: z
-        .enum(['SUBMITTED', 'APPROVED', 'REJECTED', 'CONVERTED'])
+        .enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED'])
         .optional()
-        .describe('Status'),
+        .describe('Status. New requests start as PENDING_REVIEW.'),
       site_id: z.string().guid().optional().describe('Site ID - resolve first via list_sites'),
       building_id: z
         .string()
@@ -4375,7 +4389,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
 
   server.tool(
     'upload_file',
-    'Upload a file to AssetLab storage by sending its bytes inline (base64). The AssetLab backend performs the storage upload server-side - use this tool when the client cannot PUT directly to Supabase Storage (e.g. Claude integrations whose outbound network blocks arbitrary supabase.co hosts). Returns { path, bucket, file_size, content_type }. After uploading, pass path to the appropriate record tool (update_asset image_url, create_asset_document file_path, update_work_order image_url, create_attachment file_path, create_project_document file_path, create_contract_document file_path). Server limit is ~10 MB decoded; MCP arg ceiling effectively caps file size around 700 KB-1 MB. For larger files, use create_upload_url instead. Requires upload_urls:write scope.',
+    'Upload a file to AssetLab storage by sending its bytes inline (base64). The AssetLab backend performs the storage upload server-side - use this tool when the client cannot PUT directly to Supabase Storage (e.g. Claude integrations whose outbound network blocks arbitrary supabase.co hosts). Returns { path, bucket, file_size, content_type }. After uploading, pass path to the appropriate record tool (update_asset image_url, create_asset_document file_path, update_work_order image_url, create_attachment file_url, create_project_document file_path, create_contract_document file_path). Server limit is ~10 MB decoded; MCP arg ceiling effectively caps file size around 700 KB-1 MB. For larger files, use create_upload_url instead. Requires upload_urls:write scope.',
     {
       bucket: z
         .enum([

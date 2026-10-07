@@ -347,3 +347,35 @@ describe('loadConfig', () => {
     expect(loadConfig()).toEqual({ apiKey: 'al_live_xxx', apiUrl: 'https://x.example.com' })
   })
 })
+
+describe('AssetLabClient > gateway error details', () => {
+  let fx: FetchFake
+  beforeEach(() => {
+    fx = installFetchFake()
+  })
+  afterEach(() => fx.restore())
+
+  it('appends each field detail to a validation error, so the caller sees the fix', async () => {
+    // The tester saw a bare "Validation failed" for every rejected write: the gateway sent the
+    // field details and the client dropped them.
+    fx.on('POST', '/v1/work-requests', () =>
+      fx.json(
+        {
+          error: 'Validation failed',
+          details: [{ field: 'status', message: 'New work requests start as PENDING_REVIEW.' }],
+        },
+        400
+      )
+    )
+    const c = new AssetLabClient({ apiUrl: 'https://api.example.com', apiKey: apiKey() })
+    await expect(c.create('work-requests', { title: 'x', status: 'APPROVED' })).rejects.toThrow(
+      'Validation failed: status: New work requests start as PENDING_REVIEW.'
+    )
+  })
+
+  it('leaves an error without details unchanged', async () => {
+    fx.on('GET', '/v1/assets', () => fx.json({ error: 'Something specific' }, 400))
+    const c = new AssetLabClient({ apiUrl: 'https://api.example.com', apiKey: apiKey() })
+    await expect(c.list('assets')).rejects.toThrow(/^Something specific$/)
+  })
+})

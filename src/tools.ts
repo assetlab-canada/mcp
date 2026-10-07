@@ -232,8 +232,8 @@ diagnostic information you have: report it before interpreting it, then act on w
 - Work order priority: LOW, MEDIUM, HIGH, URGENT
 - Work order status: NEW, IN_PROGRESS, ON_HOLD, REJECTED, COMPLETED, CANCELLED
 - Work order type: PM, REACTIVE
-- Work request priority: LOW, MEDIUM, HIGH, CRITICAL
-- Work request status: SUBMITTED, APPROVED, REJECTED, CONVERTED
+- Work request priority: LOW, MEDIUM, HIGH, URGENT
+- Work request status: PENDING_REVIEW, APPROVED, REJECTED
 - PM frequency: DAILY, WEEKLY, MONTHLY, QUARTERLY, SEMI_ANNUAL, ANNUAL, FIVE_YEARLY, CUSTOM
 - Project type: capital, maintenance, repair, upgrade, new_construction, renovation, deferred_maintenance, other
 - Project health_status: on_track, at_risk, delayed, critical
@@ -373,7 +373,7 @@ After either tool succeeds, attach the returned \`path\` to the target record. A
 - Asset IMAGE → \`update_asset\` with \`image_url\` (bucket "asset-images")
 - Asset DOCUMENT → \`create_asset_document\` with \`file_path\` (bucket "documents")
 - Work order IMAGE → \`update_work_order\` with \`image_url\` (bucket "attachments")
-- Work order / work request / PM ATTACHMENT → \`create_attachment\` with \`file_path\` (bucket "attachments")
+- Work order / work request / PM ATTACHMENT → \`create_attachment\` with \`file_url\` (bucket "attachments")
 - Project DOCUMENT → \`create_project_document\` with \`file_path\` (bucket "project-documents")
 - Contract DOCUMENT → \`create_contract_document\` with \`file_path\` (bucket "contract-documents")
 `
@@ -467,7 +467,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
 
   server.tool(
     'list_work_orders',
-    'List work orders. Filter by status (NEW, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED), priority (LOW, MEDIUM, HIGH, CRITICAL), type (CORRECTIVE, PREVENTIVE, EMERGENCY, INSPECTION), and site. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
+    'List work orders. Filter by status (NEW, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED), priority (LOW, MEDIUM, HIGH, URGENT), type (PM, REACTIVE), and site. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
       ...searchSchema,
       ...paginationSchema,
@@ -475,11 +475,8 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
         .string()
         .optional()
         .describe('Filter by status: NEW, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED'),
-      priority: z.string().optional().describe('Filter by priority: LOW, MEDIUM, HIGH, CRITICAL'),
-      type: z
-        .string()
-        .optional()
-        .describe('Filter by type: CORRECTIVE, PREVENTIVE, EMERGENCY, INSPECTION'),
+      priority: z.string().optional().describe('Filter by priority: LOW, MEDIUM, HIGH, URGENT'),
+      type: z.string().optional().describe('Filter by type: PM (preventive) or REACTIVE'),
       site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
@@ -1073,15 +1070,15 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
 
   server.tool(
     'list_work_requests',
-    'List work requests (submitted by requesters). Filter by status (SUBMITTED, APPROVED, REJECTED, CONVERTED) or priority.',
+    'List work requests (submitted by requesters). Filter by status (PENDING_REVIEW, APPROVED, REJECTED) or priority.',
     {
       ...searchSchema,
       ...paginationSchema,
       status: z
         .string()
         .optional()
-        .describe('Filter by status: SUBMITTED, APPROVED, REJECTED, CONVERTED'),
-      priority: z.string().optional().describe('Filter by priority: LOW, MEDIUM, HIGH, CRITICAL'),
+        .describe('Filter by status: PENDING_REVIEW, APPROVED, REJECTED'),
+      priority: z.string().optional().describe('Filter by priority: LOW, MEDIUM, HIGH, URGENT'),
       site_id: z.string().guid().optional().describe('Filter by site ID'),
     },
     async params => {
@@ -1566,7 +1563,6 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
     'list_budgets',
     'List annual funding budgets - one figure per year, funding source (O&M or Capital) and workspace (module), which is what the dashboard Budget tab shows. Filter by year, funding source, module, site or building. Includes allocated, budgeted, and remaining amounts. Amounts are bare numbers with no currency: call get_organization_settings for currency_code before stating one.',
     {
-      ...searchSchema,
       ...paginationSchema,
       year: z.number().int().optional().describe('Filter by budget year (e.g. 2026)'),
       site_id: z.string().guid().optional().describe('Filter by site ID'),

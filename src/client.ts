@@ -47,6 +47,24 @@ export class AssetLabClientError extends Error {
   }
 }
 
+/**
+ * The gateway's error text plus its field details. A validation failure is
+ * `{ error: 'Validation failed', details: [{ field, message }] }`; the details name the fix,
+ * and dropping them is why every rejected write read as a bare "Validation failed".
+ */
+function gatewayErrorMessage(body: unknown, fallback: string): string {
+  const { error, details } = body as {
+    error?: string
+    details?: Array<{ field?: string; message?: string }>
+  }
+  const base = error || fallback
+  if (!Array.isArray(details) || details.length === 0) return base
+  const parts = details.map(d =>
+    d.field ? `${d.field}: ${d.message ?? 'invalid'}` : (d.message ?? 'invalid')
+  )
+  return `${base}: ${parts.join('; ')}`
+}
+
 // F-016 - Identity-defining keys must come from the gateway's JWT-derived
 // context, never from the caller. Stripping here is defense-in-depth: the
 // gateway already overrides these from the verified Clerk claims, but a
@@ -112,7 +130,7 @@ export class AssetLabClient {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-      const message = (body as { error?: string }).error || `HTTP ${res.status}`
+      const message = gatewayErrorMessage(body, `HTTP ${res.status}`)
 
       // Map to user-friendly messages
       switch (res.status) {
@@ -192,7 +210,7 @@ export class AssetLabClient {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-      const message = (data as { error?: string }).error || `HTTP ${res.status}`
+      const message = gatewayErrorMessage(data, `HTTP ${res.status}`)
 
       switch (res.status) {
         case 401:
@@ -243,7 +261,7 @@ export class AssetLabClient {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-      const message = (data as { error?: string }).error || `HTTP ${res.status}`
+      const message = gatewayErrorMessage(data, `HTTP ${res.status}`)
 
       switch (res.status) {
         case 401:
@@ -305,11 +323,11 @@ export class AssetLabClient {
     if (res.status === 400) {
       const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
       if ((data as { summary?: unknown }).summary) return data as BulkResponse
-      throw new AssetLabClientError(400, (data as { error?: string }).error || 'Bad request')
+      throw new AssetLabClientError(400, gatewayErrorMessage(data, 'Bad request'))
     }
 
     const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    const message = (data as { error?: string }).error || `HTTP ${res.status}`
+    const message = gatewayErrorMessage(data, `HTTP ${res.status}`)
     switch (res.status) {
       case 401:
         throw new AssetLabClientError(401, 'Authentication failed. Check your ASSETLAB_API_KEY.')
@@ -344,7 +362,7 @@ export class AssetLabClient {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-      const message = (data as { error?: string }).error || `HTTP ${res.status}`
+      const message = gatewayErrorMessage(data, `HTTP ${res.status}`)
 
       switch (res.status) {
         case 401:
