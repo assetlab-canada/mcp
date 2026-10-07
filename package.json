@@ -1,0 +1,52 @@
+{
+  "name": "@assetlab/mcp-server",
+  "mcpName": "ca.assetlab/mcp-server",
+  "version": "2.21.0",
+  "description": "MCP server for AssetLab — connect Claude or ChatGPT to your asset management data",
+  "type": "module",
+  "bin": {
+    "assetlab-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "worker:dev": "wrangler dev --config wrangler.toml",
+    "worker:deploy": "wrangler deploy --config wrangler.toml"
+  },
+  "keywords": [
+    "mcp",
+    "assetlab",
+    "asset-management",
+    "claude",
+    "chatgpt",
+    "openai"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/worker.*",
+    "!dist/oauth.*"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0",
+    "wrangler": "^4.97.0"
+  },
+  "overrides": {
+    "undici": "^7.29.0",
+    "sharp": "^0.35.5"
+  }
+}

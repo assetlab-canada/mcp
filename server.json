@@ -1,0 +1,39 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ca.assetlab/mcp-server",
+  "title": "AssetLab",
+  "description": "Work orders, PM schedules, assets, capital plans and infrastructure in AssetLab CMMS/EAM.",
+  "websiteUrl": "https://assetlab.ca",
+  "version": "2.21.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@assetlab/mcp-server",
+      "version": "2.21.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ASSETLAB_API_KEY",
+          "description": "API key from AssetLab Settings > API Keys",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "ASSETLAB_API_URL",
+          "description": "AssetLab API gateway URL",
+          "isRequired": true,
+          "default": "https://ksirnjovowpvamgcnapt.supabase.co/functions/v1/api-gateway"
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.assetlab.ca"
+    }
+  ]
+}
