@@ -1603,7 +1603,7 @@ export function registerTools(target: McpServer, client: AssetLabClient): void {
 
   server.tool(
     'get_organization_settings',
-    "Get this organization's display settings: currency_code (ISO 4217), timezone, date_format, company_name, org_category, and which optional modules are enabled (floorplans, infrastructure, level of service). Call this before presenting any monetary amount - costs, budgets and replacement values returned by every other tool are bare numbers with no currency attached, so stating one without checking risks labelling a Canadian tenant's money as US dollars. Also the fastest way to tell an empty module from one this organization does not have.",
+    "Get this organization's display settings: currency_code (ISO 4217), timezone, date_format, company_name, org_category, and which optional modules are enabled (infrastructure, level of service; enable_floorplans is not enforced - floorplans are available on every plan). Call this before presenting any monetary amount - costs, budgets and replacement values returned by every other tool are bare numbers with no currency attached, so stating one without checking risks labelling a Canadian tenant's money as US dollars. Also the fastest way to tell an empty module from one this organization does not have.",
     {},
     async () => {
       try {

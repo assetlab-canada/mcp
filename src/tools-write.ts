@@ -1780,7 +1780,13 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       current_phase: z.string().max(100).optional().describe('Current phase'),
       description: z.string().optional().describe('Description'),
       end_date: z.string().optional().describe('End date (ISO 8601)'),
-      budget: z.number().min(0).optional().describe('Total budget'),
+      budget: z
+        .number()
+        .min(0)
+        .optional()
+        .describe(
+          'Initial budget, stored as a lump-sum budget item. A project budget is the sum of its budget items: change it later with create/update_project_budget_item.'
+        ),
       project_manager: z.string().max(200).optional().describe('Project manager name'),
       progress_percentage: z
         .number()
@@ -1837,7 +1843,6 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       current_phase: z.string().max(100).optional().describe('Current phase'),
       description: z.string().optional().describe('Description'),
       end_date: z.string().optional().describe('End date (ISO 8601)'),
-      budget: z.number().min(0).optional().describe('Total budget'),
       project_manager: z.string().max(200).optional().describe('Project manager name'),
       progress_percentage: z
         .number()
@@ -2123,7 +2128,12 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
         .guid()
         .optional()
         .describe('Part from inventory - resolve via list_parts'),
-      line_number: z.number().int().min(1).optional().describe('Position on the order'),
+      line_number: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe('Position on the order. Omit it to add the line after the last one.'),
     },
     async params => {
       try {
@@ -2927,11 +2937,22 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
         .optional()
         .describe('Task status'),
       priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('Priority'),
-      assigned_to: z.string().max(200).optional().describe('Assigned user'),
+      assigned_to: z
+        .string()
+        .max(200)
+        .optional()
+        .describe('Assigned user - an active member of the organization (see list_users)'),
       start_date: z.string().optional().describe('Start date (ISO 8601)'),
       due_date: z.string().optional().describe('Due date (ISO 8601)'),
       estimated_hours: z.number().min(0).optional().describe('Estimated hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
+      parent_task_id: z.string().guid().optional().describe('Parent task ID, for a subtask'),
+      completion_percentage: z
+        .number()
+        .min(0)
+        .max(100)
+        .optional()
+        .describe('Percent complete (0-100)'),
     },
     async params => {
       try {
@@ -2957,11 +2978,22 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
         .optional()
         .describe('Task status'),
       priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('Priority'),
-      assigned_to: z.string().max(200).optional().describe('Assigned user'),
+      assigned_to: z
+        .string()
+        .max(200)
+        .optional()
+        .describe('Assigned user - an active member of the organization (see list_users)'),
       start_date: z.string().optional().describe('Start date (ISO 8601)'),
       due_date: z.string().optional().describe('Due date (ISO 8601)'),
       estimated_hours: z.number().min(0).optional().describe('Estimated hours'),
       estimated_cost: z.number().min(0).optional().describe('Estimated cost'),
+      parent_task_id: z.string().guid().optional().describe('Parent task ID, for a subtask'),
+      completion_percentage: z
+        .number()
+        .min(0)
+        .max(100)
+        .optional()
+        .describe('Percent complete (0-100)'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -3004,6 +3036,8 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
         .optional()
         .describe('Milestone status'),
       completed_date: z.string().optional().describe('Completed date (ISO 8601)'),
+      is_critical: z.boolean().optional().describe('Whether the milestone is on the critical path'),
+      phase_id: z.string().guid().optional().describe('Phase the milestone belongs to'),
     },
     async params => {
       try {
@@ -3029,6 +3063,8 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
         .optional()
         .describe('Milestone status'),
       completed_date: z.string().optional().describe('Completed date (ISO 8601)'),
+      is_critical: z.boolean().optional().describe('Whether the milestone is on the critical path'),
+      phase_id: z.string().guid().optional().describe('Phase the milestone belongs to'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -3134,6 +3170,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       project_id: z.string().guid().describe('Project ID (required)'),
       category: z
         .enum([
+          'lump_sum',
           'labor',
           'materials',
           'equipment',
@@ -3146,6 +3183,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       description: z.string().optional().describe('Description'),
       planned_amount: z.number().min(0).optional().describe('Planned amount'),
       actual_amount: z.number().min(0).optional().describe('Actual amount'),
+      notes: z.string().max(5000).optional().describe('Notes'),
     },
     async params => {
       try {
@@ -3165,6 +3203,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       project_id: z.string().guid().optional().describe('Project ID'),
       category: z
         .enum([
+          'lump_sum',
           'labor',
           'materials',
           'equipment',
@@ -3178,6 +3217,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       description: z.string().optional().describe('Description'),
       planned_amount: z.number().min(0).optional().describe('Planned amount'),
       actual_amount: z.number().min(0).optional().describe('Actual amount'),
+      notes: z.string().max(5000).optional().describe('Notes'),
     },
     async ({ id, ...rest }) => {
       try {
@@ -3213,10 +3253,20 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
     {
       project_id: z.string().guid().describe('Project ID (required)'),
       task_id: z.string().guid().describe('Task ID (required)'),
-      user_id: z.string().min(1).describe('User ID (required)'),
+      user_id: z
+        .string()
+        .min(1)
+        .describe('User ID (required) - an active member of the organization (see list_users)'),
       start_time: z.string().describe('Start time (ISO 8601 datetime, required)'),
       end_time: z.string().optional().describe('End time (ISO 8601 datetime)'),
-      duration_minutes: z.number().min(0).optional().describe('Duration worked, in minutes'),
+      duration_minutes: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe(
+          'Whole minutes worked. Send this or start_time and end_time; if you send both, they must agree.'
+        ),
       description: z.string().optional().describe('Description'),
       user_name: z.string().max(200).optional().describe('Display name of the user'),
       is_billable: z.boolean().optional().describe('Whether the time is billable'),
@@ -3241,7 +3291,14 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
       user_id: z.string().optional().describe('User ID'),
       start_time: z.string().optional().describe('Start time (ISO 8601 datetime)'),
       end_time: z.string().optional().describe('End time (ISO 8601 datetime)'),
-      duration_minutes: z.number().min(0).optional().describe('Duration worked, in minutes'),
+      duration_minutes: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe(
+          'Whole minutes worked. Send this or start_time and end_time; if you send both, they must agree.'
+        ),
       description: z.string().optional().describe('Description'),
       user_name: z.string().max(200).optional().describe('Display name of the user'),
       is_billable: z.boolean().optional().describe('Whether the time is billable'),
@@ -4158,7 +4215,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
 
   server.tool(
     'create_custom_field_value',
-    "Create (upsert) a custom field value for an entity. The table stores values in typed columns - prefer setting the one that matches the field definition's field_type: value_text (text/select), value_number (number), value_date (date, ISO YYYY-MM-DD), value_boolean (boolean). Alternatively pass a single `value` string and the server will dispatch it to the right column based on field_type. Writes upsert on (entity_id, field_definition_id) so replaying a batch is idempotent. Requires custom_fields:write scope.",
+    "Create (upsert) a custom field value for an entity. The table stores values in typed columns - prefer setting the one that matches the field definition's field_type: value_text (text/select; a select value must be one of the field's options), value_number (number), value_date (date, ISO YYYY-MM-DD), value_boolean (boolean). Alternatively pass a single `value` string and the server will dispatch it to the right column based on field_type. Writes upsert on (entity_id, field_definition_id) so replaying a batch is idempotent. Requires custom_fields:write scope.",
     {
       entity_id: z.string().guid().describe('Entity ID - e.g. asset.id, work_order.id (required)'),
       field_definition_id: z
@@ -4793,7 +4850,10 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
     'Create a dependency between two project tasks. Requires project_task_dependencies:write scope.',
     {
       task_id: z.string().guid().describe('Task ID (the dependent task, required)'),
-      depends_on_task_id: z.string().guid().describe('Task ID that must complete first (required)'),
+      depends_on_task_id: z
+        .string()
+        .guid()
+        .describe('Task ID that must complete first (required); must differ from task_id'),
       dependency_type: z
         .enum(['finish_to_start', 'start_to_start', 'finish_to_finish', 'start_to_finish'])
         .optional()
@@ -6236,7 +6296,9 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
         .string()
         .guid()
         .optional()
-        .describe('Optional region the pin sits inside (usually auto-inferred)'),
+        .describe(
+          'Region the pin sits inside. Not inferred from the pin position: set it if the pin belongs to a region.'
+        ),
       source: z
         .enum(REGION_SOURCES)
         .optional()
