@@ -647,7 +647,7 @@ export function registerWriteTools(server: ToolRegistrar, client: AssetLabClient
 
   server.tool(
     'update_work_request',
-    'Update an existing work request by ID. Requires work_requests:write scope. When changing location, resolve top-down: list_sites → list_buildings (by site_id) → list_locations (by building_id). Provide all three IDs.',
+    'Update an existing work request by ID. Requires work_requests:write scope. Setting status to APPROVED creates a new work order from the request (its title, location and asset carry over) - confirm with the user first, and look the work order up afterwards with list_work_orders; REJECTED creates nothing. When changing location, resolve top-down: list_sites → list_buildings (by site_id) → list_locations (by building_id). Provide all three IDs.',
     {
       id: z.string().guid().describe('Work request ID'),
       title: z.string().min(1).max(500).optional().describe('Work request title'),
